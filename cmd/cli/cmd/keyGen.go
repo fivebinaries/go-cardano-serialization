@@ -3,7 +3,7 @@ package cmd
 import (
 	"crypto/rand"
 	"fmt"
-	"github.com/fivebinaries/go-cardano-serialization/serialization"
+	"github.com/fivebinaries/go-cardano-serialization/bip32"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +39,7 @@ var keyGenCmd = &cobra.Command{
 				return err
 			}
 
-			privateKey, err := serialization.NewXPrv(seed)
+			privateKey, err := bip32.NewXPrv(seed)
 			if err != nil {
 				fmt.Println("Failed to generate new private key", err)
 				return err
