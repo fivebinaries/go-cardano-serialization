@@ -33,3 +33,8 @@ Address API example:
       addrBase := NewBaseAddress(5, StakeCredetialFromKeyHash(keyBytes[:]), StakeCredetialFromScriptHash(scriptBytes[:]))
       addrBytes := addrBase.ToBytes()
    ```
+## Tests
+You can run all tests with the command:
+   ```go
+    go test ./...
+   ```

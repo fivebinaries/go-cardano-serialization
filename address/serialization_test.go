@@ -150,6 +150,184 @@ func TestFromBytes(t *testing.T) {
 	}
 }
 
+func TestFromBytes2(t *testing.T) {
+	rawBytes := []byte{130, 216, 24, 88, 66, 131, 88, 28, 98, 20, 93, 160, 196, 223, 73, 74, 239, 128, 24, 81, 94, 84,
+		14, 150, 209, 121, 236, 157, 75, 138, 206, 238, 123, 185, 188, 9, 161, 1, 88, 30, 88, 28, 54, 3, 60, 125, 235,
+		15, 7, 94, 174, 1, 220, 144, 222, 86, 44, 185, 172, 19, 170, 210, 84, 142, 65, 88, 80, 223, 47, 243, 0, 26,
+		103, 3, 88, 25}
+	address, err := FromBytes(rawBytes)
+	if err != nil {
+		t.Fatal(
+			"Error in test",
+			"error", err,
+		)
+	}
+	testPubKey := []byte{
+		0x6a, 0x50, 0x96, 0x89, 0xc6, 0x53, 0x17, 0x58, 0x65, 0x98, 0x5a, 0xd1, 0xe0, 0xeb,
+		0x5f, 0xf9, 0xad, 0xa6, 0x99, 0x7a, 0xa4, 0x03, 0xe6, 0x48, 0x61, 0x4b, 0x3b, 0x78,
+		0xfc, 0xba, 0x9c, 0x27, 0x30, 0x82, 0x28, 0xd9, 0x87, 0x2a, 0xf8, 0xb6, 0x5b, 0x98,
+		0x7f, 0xf2, 0x3e, 0x1a, 0x20, 0xcd, 0x90, 0xd8, 0x34, 0x6c, 0x31, 0xf0, 0xed, 0xb8,
+		0x99, 0x89, 0x52, 0xdc, 0x67, 0x66, 0x55, 0x80,
+	}
+	if !address.IdenticalWithPubKey((*bip32.XPub)(&testPubKey)) {
+		t.Fatal("unexpected answer")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L675
+func TestVariableNetEncoding(t *testing.T) {
+	cases := []uint64{0, 127, 128, 255, 256275757658493284}
+	for i, cur_case := range cases {
+		encoded := VariableNatEncode(cur_case)
+		decoded, _, err := VariableNatDecode(encoded)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cur_case != decoded {
+			t.Fatal("unexpected answer in case #", i, " ", cur_case)
+		}
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L691
+func TestBaseSerializeConsistency(t *testing.T) {
+	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
+	scriptBytes := [crypto.ScriptHashLen]byte{}
+	for i := range keyBytes {
+		keyBytes[i] = 23
+	}
+	for i := range scriptBytes {
+		scriptBytes[i] = 42
+	}
+	addr := NewBaseAddress(5, StakeCredentialFromKeyHash(keyBytes[:]), StakeCredentialFromScriptHash(scriptBytes[:]))
+	addrBytes := addr.ToBytes()
+	addr2, err := AddressFromBytes(addrBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr2, ok := addr2.(BaseAddress)
+	if !ok {
+		t.Fatal("unexpected address")
+	}
+	addr2Bytes := addr2.ToBytes()
+	if !bytes.Equal(addrBytes, addr2Bytes) {
+		t.Fatal("unexpected bytes")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L702
+func TestPtrSerializeConsistency(t *testing.T) {
+	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
+	for i := range keyBytes {
+		keyBytes[i] = 23
+	}
+	ptr := NewPointerAddress(25, StakeCredentialFromKeyHash(keyBytes[:]),
+		NewPointer(2354556573, 127, 0),
+	)
+	addrBytes := ptr.ToBytes()
+	addr2, err := AddressFromBytes(addrBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr2, ok := addr2.(PointerAddress)
+	if !ok {
+		t.Fatal("unexpected address")
+	}
+	addr2Bytes := addr2.ToBytes()
+	if !bytes.Equal(addrBytes, addr2Bytes) {
+		t.Fatal("unexpected bytes")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L713
+func TestEnterpiseSerializeConsistency(t *testing.T) {
+	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
+	for i := range keyBytes {
+		keyBytes[i] = 23
+	}
+	ptr := NewEnterpriseAddress(64, StakeCredentialFromKeyHash(keyBytes[:]))
+	addrBytes := ptr.ToBytes()
+	addr2, err := AddressFromBytes(addrBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr2, ok := addr2.(EnterpriseAddress)
+	if !ok {
+		t.Fatal("unexpected address")
+	}
+	addr2Bytes := addr2.ToBytes()
+	if !bytes.Equal(addrBytes, addr2Bytes) {
+		t.Fatal("unexpected bytes")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L723
+func TestRewardSerializeConsistency(t *testing.T) {
+	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
+	for i := range keyBytes {
+		keyBytes[i] = 127
+	}
+	ptr := NewRewardAddress(9, StakeCredentialFromScriptHash(keyBytes[:]))
+	addrBytes := ptr.ToBytes()
+	addr2, err := AddressFromBytes(addrBytes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr2, ok := addr2.(RewardAddress)
+	if !ok {
+		t.Fatal("unexpected address")
+	}
+	addr2Bytes := addr2.ToBytes()
+	if !bytes.Equal(addrBytes, addr2Bytes) {
+		t.Fatal("unexpected bytes")
+	}
+}
+
+//implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L732
+func rootKey12() bip32.XPrv {
+	//test walk nut penalty hip pave soap entry language right filter choice
+	entropy := []byte{0xdf, 0x9e, 0xd2, 0x5e, 0xd1, 0x46, 0xbf, 0x43, 0x33, 0x6a, 0x5d, 0x7c, 0xf7, 0x39, 0x59, 0x94}
+	return bip32.FromBip39Entropy(entropy, []byte{})
+}
+
+//implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L738
+func rootKey15() bip32.XPrv {
+	//test walk nut penalty hip pave soap entry language right filter choice
+	entropy := []byte{0x0c, 0xcb, 0x74, 0xf3, 0x6b, 0x7d, 0xa1, 0x64, 0x9a, 0x81, 0x44, 0x67, 0x55, 0x22, 0xd4, 0xd8, 0x09, 0x7c, 0x64, 0x12}
+	return bip32.FromBip39Entropy(entropy, []byte{})
+}
+
+//implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L744
+func rootKey24() bip32.XPrv {
+	//test walk nut penalty hip pave soap entry language right filter choice
+	entropy := []byte{0x4e, 0x82, 0x8f, 0x9a, 0x67, 0xdd, 0xcf, 0xf0,
+		0xe6, 0x39, 0x1a, 0xd4, 0xf2, 0x6d, 0xdb, 0x75,
+		0x79, 0xf5, 0x9b, 0xa1, 0x4b, 0x6d, 0xd4, 0xba,
+		0xf6, 0x3d, 0xcf, 0xdb, 0x9d, 0x24, 0x20, 0xda}
+	return bip32.FromBip39Entropy(entropy, []byte{})
+}
+
+//implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L749
+func harden(index uint32) uint32 {
+	return index | 0x80000000
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L754
+func TestBech32Parsing(t *testing.T) {
+	addr, err := AddressFromBech32("addr1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8sxy9w7g")
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefix := "foobar"
+	encodeStr, err := addr.ToBech32(&prefix)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if encodeStr != "foobar1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8s92n4tm" {
+		t.Fatal("unexpected answer")
+	}
+}
+
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L760
 func TestByronMagicParsing(t *testing.T) {
 	addr, err := FromBytes(base58.Decode("Ae2tdPwUPEZ4YjgvykNpoFeYUxoyhNj2kg8KfKWN2FizsSpLUPv68MpTVDo"))
@@ -186,27 +364,147 @@ func TestByronMagicParsing(t *testing.T) {
 	}
 }
 
-func TestFromBytes2(t *testing.T) {
-	rawBytes := []byte{130, 216, 24, 88, 66, 131, 88, 28, 98, 20, 93, 160, 196, 223, 73, 74, 239, 128, 24, 81, 94, 84,
-		14, 150, 209, 121, 236, 157, 75, 138, 206, 238, 123, 185, 188, 9, 161, 1, 88, 30, 88, 28, 54, 3, 60, 125, 235,
-		15, 7, 94, 174, 1, 220, 144, 222, 86, 44, 185, 172, 19, 170, 210, 84, 142, 65, 88, 80, 223, 47, 243, 0, 26,
-		103, 3, 88, 25}
-	address, err := FromBytes(rawBytes)
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L773
+func TestBip32_12Base(t *testing.T) {
+	spend := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	stake := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	stakeHash := stake.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	stakeCred := StakeCredentialFromKeyHash(stakeHash[:])
+	addrNet0 := NewBaseAddress(TestNet().NetworkId, spendCred, stakeCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
 	if err != nil {
-		t.Fatal(
-			"Error in test",
-			"error", err,
-		)
+		t.Fatal(err)
 	}
-	testPubKey := []byte{
-		0x6a, 0x50, 0x96, 0x89, 0xc6, 0x53, 0x17, 0x58, 0x65, 0x98, 0x5a, 0xd1, 0xe0, 0xeb,
-		0x5f, 0xf9, 0xad, 0xa6, 0x99, 0x7a, 0xa4, 0x03, 0xe6, 0x48, 0x61, 0x4b, 0x3b, 0x78,
-		0xfc, 0xba, 0x9c, 0x27, 0x30, 0x82, 0x28, 0xd9, 0x87, 0x2a, 0xf8, 0xb6, 0x5b, 0x98,
-		0x7f, 0xf2, 0x3e, 0x1a, 0x20, 0xcd, 0x90, 0xd8, 0x34, 0x6c, 0x31, 0xf0, 0xed, 0xb8,
-		0x99, 0x89, 0x52, 0xdc, 0x67, 0x66, 0x55, 0x80,
+	if addrNet0Bech32 != "addr_test1qz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwq2ytjqp" {
+		t.Fatal("undefined address net 0")
 	}
-	if !address.IdenticalWithPubKey((*bip32.XPub)(&testPubKey)) {
-		t.Fatal("unexpected answer")
+	addrNet3 := NewBaseAddress(MainNet().NetworkId, spendCred, stakeCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1qx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer3jcu5d8ps7zex2k2xt3uqxgjqnnj83ws8lhrn648jjxtwqfjkjv7" {
+		t.Fatal("undefined address net 3")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L797
+func TestBip32_12Enterprise(t *testing.T) {
+	spend := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	addrNet0 := NewEnterpriseAddress(TestNet().NetworkId, spendCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet0Bech32 != "addr_test1vz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspjrlsz" {
+		t.Fatal("undefined address net 0")
+	}
+	addrNet3 := NewEnterpriseAddress(MainNet().NetworkId, spendCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1vx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzers66hrl8" {
+		t.Fatal("undefined address net 3")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L813
+func TestBip32_12Pointer(t *testing.T) {
+	spend := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	addrNet0 := NewPointerAddress(TestNet().NetworkId, spendCred, NewPointer(1, 2, 3))
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet0Bech32 != "addr_test1gz2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzerspqgpsqe70et" {
+		t.Fatal("undefined address net 0")
+	}
+	addrNet3 := NewPointerAddress(MainNet().NetworkId, spendCred, NewPointer(24157, 177, 42))
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1gx2fxv2umyhttkxyxp8x0dlpdt3k6cwng5pxj3jhsydzer5ph3wczvf2w8lunk" {
+		t.Fatal("undefined address net 3")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L829
+func TestBip32_15Base(t *testing.T) {
+	spend := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	stake := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	stakeHash := stake.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	stakeCred := StakeCredentialFromKeyHash(stakeHash[:])
+	addrNet0 := NewBaseAddress(TestNet().NetworkId, spendCred, stakeCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet0Bech32 != "addr_test1qpu5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qum8x5w" {
+		t.Fatal("undefined address net 0")
+	}
+	addrNet3 := NewBaseAddress(MainNet().NetworkId, spendCred, stakeCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1q9u5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5ewvxwdrt70qlcpeeagscasafhffqsxy36t90ldv06wqrk2qld6xc3" {
+		t.Fatal("undefined address net 3")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L853
+func TestBip32_15Enterprise(t *testing.T) {
+	spend := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	addrNet0 := NewEnterpriseAddress(TestNet().NetworkId, spendCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet0Bech32 != "addr_test1vpu5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5eg57c2qv" {
+		t.Fatal("undefined address net 0")
+	}
+	addrNet3 := NewEnterpriseAddress(MainNet().NetworkId, spendCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1v9u5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5eg0kvk0f" {
+		t.Fatal("undefined address net 3")
+	}
+}
+
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L869
+func TestBip32_15Pointer(t *testing.T) {
+	spend := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	addrNet0 := NewPointerAddress(TestNet().NetworkId, spendCred, NewPointer(1, 2, 3))
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet0Bech32 != "addr_test1gpu5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5egpqgpsdhdyc0" {
+		t.Fatal("undefined address net 0")
+	}
+	addrNet3 := NewPointerAddress(MainNet().NetworkId, spendCred, NewPointer(24157, 177, 42))
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1g9u5vlrf4xkxv2qpwngf6cjhtw542ayty80v8dyr49rf5evph3wczvf2kd5vam" {
+		t.Fatal("undefined address net 3")
 	}
 }
 
@@ -241,128 +539,139 @@ func TestParseRedeemAddress(t *testing.T) {
 	}
 }
 
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L675
-func TestVariableNetEncoding(t *testing.T) {
-	cases := []uint64{0, 127, 128, 255, 256275757658493284}
-	for i, cur_case := range cases {
-		encoded := VariableNatEncode(cur_case)
-		decoded, _, err := VariableNatDecode(encoded)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if cur_case != decoded {
-			t.Fatal("unexpected answer in case #", i, " ", cur_case)
-		}
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L894
+func TestBip32_15Byron(t *testing.T) {
+	byronKey := rootKey15().Derive(harden(44)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	byronAddr := IcarusFromKey(byronKey, MainNet().ProtocolMagic)
+	addr, err := byronAddr.ToAddr()
+	if err != nil {
+		t.Fatal(err)
+	}
+	addrBase58, err := addr.ToString()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrBase58 != "Ae2tdPwUPEZHtBmjZBF4YpMkK9tMSPTE2ADEZTPN97saNkhG78TvXdp3GDk" {
+		t.Fatal("unexpected base58 address")
+	}
+
+	netId, err := byronAddr.NetworkId()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if netId != 0b0001 {
+		t.Fatal("unexpected network id")
+	}
+
+	extAddr2, err := FromBytes(byronAddr.ToBytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	addr2, err := extAddr2.ToAddr()
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr2Base58, err := addr2.ToString()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addr2Base58 != addrBase58 {
+		t.Fatal("unexpected addresses")
 	}
 }
 
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L691
-func TestBaseSerializeConsistency(t *testing.T) {
-	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
-	scriptBytes := [crypto.ScriptHashLen]byte{}
-	for i := range keyBytes {
-		keyBytes[i] = 23
-	}
-	for i := range scriptBytes {
-		scriptBytes[i] = 42
-	}
-	addr := NewBaseAddress(5, StakeCredetialFromKeyHash(keyBytes[:]), StakeCredetialFromScriptHash(scriptBytes[:]))
-	addrBytes := addr.ToBytes()
-	addr2, err := AddressFromBytes(addrBytes)
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L912
+func TestBip32_24Base(t *testing.T) {
+	spend := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	stake := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	stakeHash := stake.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	stakeCred := StakeCredentialFromKeyHash(stakeHash[:])
+	addrNet0 := NewBaseAddress(TestNet().NetworkId, spendCred, stakeCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(BaseAddress)
-	if !ok {
-		t.Fatal("unexpected address")
+	if addrNet0Bech32 != "addr_test1qqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sw96paj" {
+		t.Fatal("undefined address net 0")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
-		t.Fatal("unexpected bytes")
+	addrNet3 := NewBaseAddress(MainNet().NetworkId, spendCred, stakeCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1qyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmn8k8ttq8f3gag0h89aepvx3xf69g0l9pf80tqv7cve0l33sdn8p3d" {
+		t.Fatal("undefined address net 3")
 	}
 }
 
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L702
-func TestPtrSerializeConsistency(t *testing.T) {
-	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
-	for i := range keyBytes {
-		keyBytes[i] = 23
-	}
-	ptr := NewPointerAddress(25, StakeCredetialFromKeyHash(keyBytes[:]),
-		NewPointer(2354556573, 127, 0),
-	)
-	addrBytes := ptr.ToBytes()
-	addr2, err := AddressFromBytes(addrBytes)
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L936
+func TestBip32_25Enterprise(t *testing.T) {
+	spend := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	addrNet0 := NewEnterpriseAddress(TestNet().NetworkId, spendCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(PointerAddress)
-	if !ok {
-		t.Fatal("unexpected address")
+	if addrNet0Bech32 != "addr_test1vqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmnqtjtf68" {
+		t.Fatal("undefined address net 0")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
-		t.Fatal("unexpected bytes")
+	addrNet3 := NewEnterpriseAddress(MainNet().NetworkId, spendCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1vyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmnqs6l44z" {
+		t.Fatal("undefined address net 3")
 	}
 }
 
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L713
-func TestEnterpiseSerializeConsistency(t *testing.T) {
-	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
-	for i := range keyBytes {
-		keyBytes[i] = 23
-	}
-	ptr := NewEnterpriseAddress(64, StakeCredetialFromKeyHash(keyBytes[:]))
-	addrBytes := ptr.ToBytes()
-	addr2, err := AddressFromBytes(addrBytes)
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L952
+func TestBip32_24Pointer(t *testing.T) {
+	spend := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spendHash := spend.PublicKey().Hash()
+	spendCred := StakeCredentialFromKeyHash(spendHash[:])
+	addrNet0 := NewPointerAddress(TestNet().NetworkId, spendCred, NewPointer(1, 2, 3))
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(EnterpriseAddress)
-	if !ok {
-		t.Fatal("unexpected address")
+	if addrNet0Bech32 != "addr_test1gqy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmnqpqgps5mee0p" {
+		t.Fatal("undefined address net 0")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
-		t.Fatal("unexpected bytes")
+	addrNet3 := NewPointerAddress(MainNet().NetworkId, spendCred, NewPointer(24157, 177, 42))
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if addrNet3Bech32 != "addr1gyy6nhfyks7wdu3dudslys37v252w2nwhv0fw2nfawemmnyph3wczvf2dqflgt" {
+		t.Fatal("undefined address net 3")
 	}
 }
 
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L723
-func TestRewardSerializeConsistency(t *testing.T) {
-	keyBytes := [crypto.Ed25519KeyHashLen]byte{}
-	for i := range keyBytes {
-		keyBytes[i] = 127
-	}
-	ptr := NewRewardAddress(9, StakeCredetialFromScriptHash(keyBytes[:]))
-	addrBytes := ptr.ToBytes()
-	addr2, err := AddressFromBytes(addrBytes)
+// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L968
+func TestBip32_12Reward(t *testing.T) {
+	stakingKey := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	stakingKeyHash := stakingKey.PublicKey().Hash()
+	stakingKeyCred := StakeCredentialFromKeyHash(stakingKeyHash[:])
+	addrNet0 := NewRewardAddress(TestNet().NetworkId, stakingKeyCred)
+	addrNet0Bech32, err := addrNet0.ToBech32(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(RewardAddress)
-	if !ok {
-		t.Fatal("unexpected address")
+	if addrNet0Bech32 != "stake_test1uqevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqp8n5xl" {
+		t.Fatal("undefined address net 0")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
-		t.Fatal("unexpected bytes")
-	}
-}
-
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L754
-func TestBech32Parsing(t *testing.T) {
-	addr, err := AddressFromBech32("addr1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8sxy9w7g")
+	addrNet3 := NewRewardAddress(MainNet().NetworkId, stakingKeyCred)
+	addrNet3Bech32, err := addrNet3.ToBech32(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
-	prefix := "foobar"
-	encodeStr, err := addr.ToBech32(&prefix)
-	if err != nil {
-		t.Fatal(err)
+	if addrNet3Bech32 != "stake1uyevw2xnsc0pvn9t9r9c7qryfqfeerchgrlm3ea2nefr9hqxdekzz" {
+		t.Fatal("undefined address net 3")
 	}
-	if encodeStr != "foobar1u8pcjgmx7962w6hey5hhsd502araxp26kdtgagakhaqtq8s92n4tm" {
-		t.Fatal("unexpected answer")
-	}
-
 }

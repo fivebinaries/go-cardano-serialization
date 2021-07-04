@@ -8,8 +8,8 @@ type StakeCredential struct {
 	Script *crypto.ScriptHash
 }
 
-// VariableNatEncode implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L79
-func StakeCredetialFromKeyHash(hash []byte) *StakeCredential {
+// StakeCredentialFromKeyHash implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L79
+func StakeCredentialFromKeyHash(hash []byte) *StakeCredential {
 	var key crypto.Ed25519KeyHash
 	copy(key[:], hash[:crypto.Ed25519KeyHashLen])
 	return &StakeCredential{
@@ -17,8 +17,8 @@ func StakeCredetialFromKeyHash(hash []byte) *StakeCredential {
 	}
 }
 
-// VariableNatEncode implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L83
-func StakeCredetialFromScriptHash(hash []byte) *StakeCredential {
+// StakeCredentialFromScriptHash implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L83
+func StakeCredentialFromScriptHash(hash []byte) *StakeCredential {
 	var script crypto.ScriptHash
 	copy(script[:], hash[:crypto.ScriptHashLen])
 	return &StakeCredential{
@@ -30,9 +30,9 @@ func StakeCredetialFromScriptHash(hash []byte) *StakeCredential {
 func readAddrCred(data []byte, header byte, bit byte, pos int) *StakeCredential {
 	hashBytes := data[pos : pos+crypto.Ed25519KeyHashLen]
 	if header&(1<<bit) == 0 {
-		return StakeCredetialFromKeyHash(hashBytes)
+		return StakeCredentialFromKeyHash(hashBytes)
 	}
-	return StakeCredetialFromScriptHash(hashBytes)
+	return StakeCredentialFromScriptHash(hashBytes)
 }
 
 // Kind implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L101

@@ -6,10 +6,19 @@ import (
 	"crypto/sha512"
 	"encoding/binary"
 	"errors"
+	"github.com/fivebinaries/go-cardano-serialization/crypto"
+	"github.com/fivebinaries/go-cardano-serialization/crypto/edwards25519"
+	"golang.org/x/crypto/pbkdf2"
+)
+
+const (
+	XPrvSize = 96
 )
 
 type XPrv []byte
 type XPub []byte
+type PublicKey []byte
+type PrivateKey []byte
 
 func NewXPrv(seed []byte) (XPrv, error) {
 	// Let k~ be 256-bit master secret.
@@ -43,8 +52,8 @@ func isHardened(index uint32) bool {
 	return index >= 0x80000000
 }
 
-func (key XPrv) publicKey() []byte {
-	return key[:32]
+func (key XPrv) publicKey() [crypto.PublicKeyLen]byte {
+	return MakePublicKey(key.extendedPrivateKey())
 }
 
 func (key XPrv) extendedPrivateKey() []byte {
@@ -58,7 +67,7 @@ func (key XPrv) chainCode() []byte {
 func add28mul8(x, y []byte) []byte {
 	var carry uint16
 
-	out := make([]byte, 0, 32)
+	out := make([]byte, 32, 32)
 	for i := 0; i < 28; i++ {
 		r := uint16(x[i]) + (uint16(y[i]) << 3) + carry
 		out[i] = byte(r & 0xff)
@@ -75,7 +84,7 @@ func add28mul8(x, y []byte) []byte {
 func add256bits(x, y []byte) []byte {
 	var carry uint16
 
-	out := make([]byte, 0, 32)
+	out := make([]byte, 32, 32)
 	for i := 0; i < 32; i++ {
 		r := uint16(x[i]) + uint16(y[i]) + carry
 		out[i] = byte(r & 0xff)
@@ -84,7 +93,7 @@ func add256bits(x, y []byte) []byte {
 	return out
 }
 
-func (key XPrv) Derive(index uint32) (XPrv, error) {
+func (key XPrv) Derive(index uint32) XPrv {
 	zmac := hmac.New(sha512.New, key.chainCode())
 	imac := hmac.New(sha512.New, key.chainCode())
 
@@ -100,17 +109,17 @@ func (key XPrv) Derive(index uint32) (XPrv, error) {
 		imac.Write(key.extendedPrivateKey())
 		imac.Write(serializedIndex)
 	} else {
+		pk := MakePublicKey(key.extendedPrivateKey())
 		zmac.Write([]byte{0x02})
-		zmac.Write(key.publicKey())
+		zmac.Write(pk[:])
 		zmac.Write(serializedIndex)
 		imac.Write([]byte{0x03})
-		imac.Write(key.publicKey())
+		imac.Write(pk[:])
 		imac.Write(serializedIndex)
 	}
 
-	var zout, iout []byte
-	zmac.Sum(zout)
-	imac.Sum(iout)
+	zout := zmac.Sum(nil)
+	iout := imac.Sum(nil)
 
 	left := add28mul8(key[:32], zout[:32])
 	right := add256bits(key[32:64], zout[32:64])
@@ -123,20 +132,51 @@ func (key XPrv) Derive(index uint32) (XPrv, error) {
 	imac.Reset()
 	zmac.Reset()
 
-	return out, nil
+	return out
 }
 
 func (key XPrv) Public() XPub {
 	out := make([]byte, 0, 64)
-	out = append(out, key.publicKey()...)
+	pk := key.publicKey()
+	out = append(out, pk[:]...)
 	out = append(out, key.chainCode()...)
 	return out
 }
 
-//func (pub XPub) publicKey() []byte {
-//	return pub[:32]
-//}
-//
-//func (pub XPub) chainCode() []byte {
-//	return pub[32:]
-//}
+func (pub XPub) PublicKey() PublicKey {
+	return PublicKey(pub[:32])
+}
+
+func (pub XPub) chainCode() PrivateKey {
+	return PrivateKey(pub[32:])
+}
+
+//FromBip39Entropy implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/chain_crypto/derive.rs#L30
+// https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/crypto.rs#L123
+func FromBip39Entropy(entropy []byte, password []byte) XPrv {
+	const Iter = 4096
+	pbkdf2_result := pbkdf2.Key(password, entropy, Iter, XPrvSize, sha512.New)
+	return NormalizeBytesForce3rd(pbkdf2_result)
+}
+
+func NormalizeBytesForce3rd(bytes []byte) XPrv {
+	bytes[0] &= 0b1111_1000
+	bytes[31] &= 0b0001_1111
+	bytes[31] |= 0b0100_0000
+	return bytes
+}
+
+func (pub PublicKey) Hash() crypto.Ed25519KeyHash {
+	return crypto.Blake2b224(pub)
+}
+
+func MakePublicKey(extendedSecret []byte) [crypto.PublicKeyLen]byte {
+	var result [crypto.PublicKeyLen]byte
+	var key [crypto.PublicKeyLen]byte
+	copy(key[:], extendedSecret[:32])
+
+	h := edwards25519.ExtendedGroupElement{}
+	edwards25519.GeScalarMultBase(&h, &key)
+	h.ToBytes(&result)
+	return result
+}

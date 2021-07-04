@@ -77,3 +77,15 @@ func (b ByronAddress) NetworkId() (uint8, error) {
 	}
 	return 0, errors.New("unexpected protocol magic")
 }
+
+// IcarusFromKey implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L229
+// icarus-style address (Ae2)
+func IcarusFromKey(key []byte, protocolMagic uint32) ByronAddress {
+	var filteredProtocolMagic *uint32
+	if protocolMagic == MainNet().ProtocolMagic {
+		filteredProtocolMagic = nil
+	} else {
+		filteredProtocolMagic = &protocolMagic
+	}
+	return NewSimpleExtendedAddr(key, filteredProtocolMagic).ToByronAddress()
+}

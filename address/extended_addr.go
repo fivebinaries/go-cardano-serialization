@@ -6,8 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/fivebinaries/go-cardano-serialization/bip32"
+	"github.com/fivebinaries/go-cardano-serialization/crypto"
 	"github.com/fxamacker/cbor/v2"
-	"golang.org/x/crypto/blake2b"
 	"golang.org/x/crypto/sha3"
 	"hash/crc32"
 	"log"
@@ -84,6 +84,12 @@ func NewExtendedAddr(pub bip32.XPub, attributes AddrAttributes) *ExtendedAddr {
 	}
 }
 
+// NewSimpleExtendedAddr implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/legacy_address/address.rs#L295
+// bootstrap era + no hdpayload address
+func NewSimpleExtendedAddr(pub bip32.XPub, protocolMagic *uint32) *ExtendedAddr {
+	return NewExtendedAddr(pub, NewBootstrapEra(nil, protocolMagic))
+}
+
 // ToExtendedAddr convert extendedAddrCBOR to ExtendedAddr
 func (addr extendedAddrCBOR) ToExtendedAddr() (ExtendedAddr, error) {
 	attr, err := addr.Attributes.ProcessAttributes()
@@ -113,12 +119,8 @@ func SHA3ThenBlake2b224(data []byte) []byte {
 	sh3 := sha3.New256()
 	sh3.Write(data)
 	sh3Result := sh3.Sum(nil)
-	b2b, err := blake2b.New(28, nil)
-	if err != nil {
-		log.Fatalf("error in sha3 then blake2b224 transform: %s", err)
-	}
-	b2b.Write(sh3Result[:])
-	return b2b.Sum(nil)
+	b2result := crypto.Blake2b224(sh3Result)
+	return b2result[:]
 }
 
 // ProcessAttributes method for converting AddrAttributesRaw to AddrAttributes
@@ -240,4 +242,9 @@ func (ea *ExtendedAddr) IdenticalWithPubKey(xpub *bip32.XPub) bool {
 		log.Fatalf("Error in ToBytes: %s", err)
 	}
 	return bytes.Equal(addrBytes, neweaBytes)
+}
+
+// NewBootstrapEra implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/legacy_address/address.rs#L85
+func NewBootstrapEra(hdap []byte, protocolMagic *uint32) AddrAttributes {
+	return AddrAttributes{DerivationPath: hdap, ProtocolMagic: protocolMagic}
 }
