@@ -1,10 +1,11 @@
-package address
+package types
 
 import (
 	"errors"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/fivebinaries/go-cardano-serialization/crypto"
+	"github.com/fivebinaries/go-cardano-serialization/lib"
 	"github.com/fxamacker/cbor/v2"
 	"hash/crc32"
 	"reflect"
@@ -153,7 +154,8 @@ func AddressFromBytes(data []byte) (Address, error) {
 		if len(data) > baseAddrSize {
 			return nil, errors.New("cbor trailing data error")
 		}
-		return NewBaseAddress(network, readAddrCred(data, header, 4, 1), readAddrCred(data, header, 5, 1+hashLen)), nil
+		res := NewBaseAddress(network, readAddrCred(data, header, 4, 1), readAddrCred(data, header, 5, 1+hashLen))
+		return &res, nil
 	// pointer
 	case 0b0100, 0b0101:
 		// header + keyhash + 3 natural numbers (min 1 byte each)
@@ -184,9 +186,10 @@ func AddressFromBytes(data []byte) (Address, error) {
 			return nil, errors.New("cbor trailing data error")
 		}
 
-		return NewPointerAddress(network, paymentCred,
-			NewPointer(Slot(slot), TransactionIndex(txIndex), CertificateIndex(certIndex)),
-		), nil
+		res := NewPointerAddress(network, paymentCred,
+			NewPointer(lib.Slot(slot), TransactionIndex(txIndex), lib.CertificateIndex(certIndex)),
+		)
+		return &res, nil
 
 	// enterprise
 	case 0b0110, 0b0111:
@@ -197,7 +200,8 @@ func AddressFromBytes(data []byte) (Address, error) {
 		if len(data) > enterpriseAddrSize {
 			return nil, errors.New("cbor trailing data error")
 		}
-		return NewEnterpriseAddress(network, readAddrCred(data, header, 4, 1)), nil
+		res := NewEnterpriseAddress(network, readAddrCred(data, header, 4, 1))
+		return &res, nil
 
 	// reward
 	case 0b1110, 0b1111:
@@ -208,7 +212,8 @@ func AddressFromBytes(data []byte) (Address, error) {
 		if len(data) > rewardAddrSize {
 			return nil, errors.New("cbor trailing data error")
 		}
-		return NewRewardAddress(network, readAddrCred(data, header, 4, 1)), nil
+		res := NewRewardAddress(network, readAddrCred(data, header, 4, 1))
+		return &res, nil
 
 	// byron
 	case 0b1000:
@@ -219,7 +224,8 @@ func AddressFromBytes(data []byte) (Address, error) {
 		if err != nil {
 			return nil, err
 		}
-		return addr.ToByronAddress(), nil
+		res := addr.ToByronAddress()
+		return &res, nil
 	}
 	return nil, errors.New("bad address type")
 }

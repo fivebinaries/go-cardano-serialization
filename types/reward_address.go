@@ -1,4 +1,4 @@
-package address
+package types
 
 import (
 	"github.com/btcsuite/btcutil/bech32"
@@ -11,12 +11,12 @@ type RewardAddress struct {
 }
 
 // NetworkId implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L455
-func (r RewardAddress) NetworkId() (byte, error) {
+func (r *RewardAddress) NetworkId() (byte, error) {
 	return r.Network, nil
 }
 
 // ToBech32 implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L429
-func (r RewardAddress) ToBech32(prefix *string) (string, error) {
+func (r *RewardAddress) ToBech32(prefix *string) (string, error) {
 	finalPrefix := ""
 	if prefix == nil {
 		prefixHeader := "stake"
@@ -40,7 +40,7 @@ func (r RewardAddress) ToBech32(prefix *string) (string, error) {
 }
 
 // ToBytes implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L299
-func (r RewardAddress) ToBytes() []byte {
+func (r *RewardAddress) ToBytes() []byte {
 	var buf []byte
 	header := 0b1110_0000 | (r.Payment.Kind() << 4) | (r.Network & 0xF)
 	buf = append(buf, header)

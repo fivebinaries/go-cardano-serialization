@@ -1,4 +1,4 @@
-package address
+package types
 
 import "github.com/fivebinaries/go-cardano-serialization/crypto"
 
@@ -50,4 +50,20 @@ func (s *StakeCredential) ToRawBytes() []byte {
 		return (*s.Key)[:]
 	}
 	return (*s.Script)[:]
+}
+
+// ToKeyHash implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L87
+func (s *StakeCredential) ToKeyHash() *crypto.Ed25519KeyHash {
+	if s.Key != nil {
+		return s.Key
+	}
+	return nil
+}
+
+// ToScriptHash implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L87
+func (s *StakeCredential) ToScriptHash() *crypto.ScriptHash {
+	if s.Script != nil {
+		return s.Script
+	}
+	return nil
 }

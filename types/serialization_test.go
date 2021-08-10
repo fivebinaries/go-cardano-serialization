@@ -1,9 +1,10 @@
-package address
+package types
 
 import (
 	"bytes"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/fivebinaries/go-cardano-serialization/bip32"
+	"github.com/fivebinaries/go-cardano-serialization/common"
 	"github.com/fivebinaries/go-cardano-serialization/crypto"
 	"testing"
 )
@@ -205,12 +206,14 @@ func TestBaseSerializeConsistency(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(BaseAddress)
+
+	baseAddr, ok := addr2.(*BaseAddress)
+
 	if !ok {
 		t.Fatal("unexpected address")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
+	baseAddrBytes := baseAddr.ToBytes()
+	if !bytes.Equal(addrBytes, baseAddrBytes) {
 		t.Fatal("unexpected bytes")
 	}
 }
@@ -229,12 +232,12 @@ func TestPtrSerializeConsistency(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(PointerAddress)
+	pointerAddr, ok := addr2.(*PointerAddress)
 	if !ok {
 		t.Fatal("unexpected address")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
+	pointerAddrBytes := pointerAddr.ToBytes()
+	if !bytes.Equal(addrBytes, pointerAddrBytes) {
 		t.Fatal("unexpected bytes")
 	}
 }
@@ -251,12 +254,12 @@ func TestEnterpiseSerializeConsistency(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(EnterpriseAddress)
+	enterpriseAddr, ok := addr2.(*EnterpriseAddress)
 	if !ok {
 		t.Fatal("unexpected address")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
+	enterpriseAddrBytes := enterpriseAddr.ToBytes()
+	if !bytes.Equal(addrBytes, enterpriseAddrBytes) {
 		t.Fatal("unexpected bytes")
 	}
 }
@@ -273,12 +276,12 @@ func TestRewardSerializeConsistency(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	addr2, ok := addr2.(RewardAddress)
+	rewardAddr, ok := addr2.(*RewardAddress)
 	if !ok {
 		t.Fatal("unexpected address")
 	}
-	addr2Bytes := addr2.ToBytes()
-	if !bytes.Equal(addrBytes, addr2Bytes) {
+	rewardAddrBytes := rewardAddr.ToBytes()
+	if !bytes.Equal(addrBytes, rewardAddrBytes) {
 		t.Fatal("unexpected bytes")
 	}
 }
@@ -305,11 +308,6 @@ func rootKey24() bip32.XPrv {
 		0x79, 0xf5, 0x9b, 0xa1, 0x4b, 0x6d, 0xd4, 0xba,
 		0xf6, 0x3d, 0xcf, 0xdb, 0x9d, 0x24, 0x20, 0xda}
 	return bip32.FromBip39Entropy(entropy, []byte{})
-}
-
-//implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L749
-func harden(index uint32) uint32 {
-	return index | 0x80000000
 }
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L754
@@ -366,8 +364,8 @@ func TestByronMagicParsing(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L773
 func TestBip32_12Base(t *testing.T) {
-	spend := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
-	stake := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	spend := rootKey12().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
+	stake := rootKey12().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(2).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	stakeHash := stake.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
@@ -392,7 +390,7 @@ func TestBip32_12Base(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L797
 func TestBip32_12Enterprise(t *testing.T) {
-	spend := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spend := rootKey12().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
 	addrNet0 := NewEnterpriseAddress(TestNet().NetworkId, spendCred)
@@ -415,7 +413,7 @@ func TestBip32_12Enterprise(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L813
 func TestBip32_12Pointer(t *testing.T) {
-	spend := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spend := rootKey12().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
 	addrNet0 := NewPointerAddress(TestNet().NetworkId, spendCred, NewPointer(1, 2, 3))
@@ -438,8 +436,8 @@ func TestBip32_12Pointer(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L829
 func TestBip32_15Base(t *testing.T) {
-	spend := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
-	stake := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	spend := rootKey15().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
+	stake := rootKey15().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(2).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	stakeHash := stake.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
@@ -464,7 +462,7 @@ func TestBip32_15Base(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L853
 func TestBip32_15Enterprise(t *testing.T) {
-	spend := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spend := rootKey15().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
 	addrNet0 := NewEnterpriseAddress(TestNet().NetworkId, spendCred)
@@ -487,7 +485,7 @@ func TestBip32_15Enterprise(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L869
 func TestBip32_15Pointer(t *testing.T) {
-	spend := rootKey15().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spend := rootKey15().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
 	addrNet0 := NewPointerAddress(TestNet().NetworkId, spendCred, NewPointer(1, 2, 3))
@@ -541,7 +539,7 @@ func TestParseRedeemAddress(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L894
 func TestBip32_15Byron(t *testing.T) {
-	byronKey := rootKey15().Derive(harden(44)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	byronKey := rootKey15().Derive(common.Harden(44)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	byronAddr := IcarusFromKey(byronKey, MainNet().ProtocolMagic)
 	addr, err := byronAddr.ToAddr()
 	if err != nil {
@@ -583,8 +581,8 @@ func TestBip32_15Byron(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L912
 func TestBip32_24Base(t *testing.T) {
-	spend := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
-	stake := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	spend := rootKey24().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
+	stake := rootKey24().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(2).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	stakeHash := stake.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
@@ -609,7 +607,7 @@ func TestBip32_24Base(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L936
 func TestBip32_25Enterprise(t *testing.T) {
-	spend := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spend := rootKey24().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
 	addrNet0 := NewEnterpriseAddress(TestNet().NetworkId, spendCred)
@@ -632,7 +630,7 @@ func TestBip32_25Enterprise(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L952
 func TestBip32_24Pointer(t *testing.T) {
-	spend := rootKey24().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(0).Derive(0).Public()
+	spend := rootKey24().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(0).Derive(0).Public()
 	spendHash := spend.PublicKey().Hash()
 	spendCred := StakeCredentialFromKeyHash(spendHash[:])
 	addrNet0 := NewPointerAddress(TestNet().NetworkId, spendCred, NewPointer(1, 2, 3))
@@ -655,7 +653,7 @@ func TestBip32_24Pointer(t *testing.T) {
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L968
 func TestBip32_12Reward(t *testing.T) {
-	stakingKey := rootKey12().Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0)).Derive(2).Derive(0).Public()
+	stakingKey := rootKey12().Derive(common.Harden(1852)).Derive(common.Harden(1815)).Derive(common.Harden(0)).Derive(2).Derive(0).Public()
 	stakingKeyHash := stakingKey.PublicKey().Hash()
 	stakingKeyCred := StakeCredentialFromKeyHash(stakingKeyHash[:])
 	addrNet0 := NewRewardAddress(TestNet().NetworkId, stakingKeyCred)

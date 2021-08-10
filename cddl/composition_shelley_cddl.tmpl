@@ -1,0 +1,5 @@
+type {{ToCamel .Name }} struct {
+{{- range $index, $field := .Fields }}
+    {{$field.Name}} {{$field.Type}}
+{{- end}}
+}

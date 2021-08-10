@@ -1,0 +1,7 @@
+version: "3.9"
+services:
+  cddl2json:
+    build: .
+    volumes:
+      - ./cddl-files:/cddl-files
+      - ./json-files:/json-files

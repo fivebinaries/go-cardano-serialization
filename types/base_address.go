@@ -1,4 +1,4 @@
-package address
+package types
 
 import "github.com/btcsuite/btcutil/bech32"
 
@@ -10,12 +10,12 @@ type BaseAddress struct {
 }
 
 // NetworkId implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L455
-func (b BaseAddress) NetworkId() (byte, error) {
+func (b *BaseAddress) NetworkId() (byte, error) {
 	return b.Network, nil
 }
 
 // ToBech32 implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L429
-func (b BaseAddress) ToBech32(prefix *string) (string, error) {
+func (b *BaseAddress) ToBech32(prefix *string) (string, error) {
 	finalPrefix := ""
 	if prefix == nil {
 		prefixHeader := "addr"
@@ -39,7 +39,7 @@ func (b BaseAddress) ToBech32(prefix *string) (string, error) {
 }
 
 // ToBytes implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L274
-func (b BaseAddress) ToBytes() []byte {
+func (b *BaseAddress) ToBytes() []byte {
 	var buf []byte
 	header := (b.Payment.Kind() << 4) | (b.Stake.Kind() << 5) | (b.Network & 0xF)
 	buf = append(buf, header)

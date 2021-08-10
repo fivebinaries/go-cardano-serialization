@@ -1,4 +1,4 @@
-package address
+package types
 
 import (
 	"bytes"
@@ -91,7 +91,7 @@ func NewSimpleExtendedAddr(pub bip32.XPub, protocolMagic *uint32) *ExtendedAddr 
 }
 
 // ToExtendedAddr convert extendedAddrCBOR to ExtendedAddr
-func (addr extendedAddrCBOR) ToExtendedAddr() (ExtendedAddr, error) {
+func (addr *extendedAddrCBOR) ToExtendedAddr() (ExtendedAddr, error) {
 	attr, err := addr.Attributes.ProcessAttributes()
 	if err != nil {
 		return ExtendedAddr{}, nil
@@ -104,7 +104,7 @@ func (addr extendedAddrCBOR) ToExtendedAddr() (ExtendedAddr, error) {
 }
 
 // toExtendedAddrCbor convert ExtendedAddr to extendedAddrCBOR
-func (ea ExtendedAddr) toExtendedAddrCbor() extendedAddrCBOR {
+func (ea *ExtendedAddr) toExtendedAddrCbor() extendedAddrCBOR {
 	attr := ea.Attributes.ProcessAttributes()
 	return extendedAddrCBOR{
 		Attributes: attr,
@@ -244,7 +244,7 @@ func (ea *ExtendedAddr) IdenticalWithPubKey(xpub *bip32.XPub) bool {
 	return bytes.Equal(addrBytes, neweaBytes)
 }
 
-// NewBootstrapEra implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/legacy_address/address.rs#L85
+// IdenticalWithPubKey implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/legacy_address/address.rs#L85
 func NewBootstrapEra(hdap []byte, protocolMagic *uint32) AddrAttributes {
 	return AddrAttributes{DerivationPath: hdap, ProtocolMagic: protocolMagic}
 }

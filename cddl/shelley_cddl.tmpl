@@ -1,0 +1,99 @@
+{{ $debug := false }}
+{{ $block := ClearTag .}}
+{{- $nameBlock := index $block 1 -}}
+{{- $fieldBlock := index $block 2 -}}
+{{- $type := index $fieldBlock 0}}
+{{- $rawName := index $nameBlock 1 -}}
+{{- $typeName := ToCamel $rawName}}
+{{- if $debug -}}
+    //{{- "raw"}} {{.}}
+{{- end}}
+{{- if eq $type "name"}}
+    type {{$typeName}} {{GetType $fieldBlock "" nil}}
+{{- else}}{{if eq $type "ary" }}
+    {{$fieldValue := index $fieldBlock 1}}
+    {{$subType := index $fieldValue 0}}
+    {{- if eq $subType "rep"}}
+        type {{$typeName}} {{GetType $fieldBlock "" nil}}
+    {{- else }}
+        {{if or (eq $subType "seq") (eq $subType "gcho") }} type {{$typeName}} struct {
+        {{if eq $subType "seq" }} _ interface{} `cbor:",toarray"` {{end}}
+        {{- range $index, $field := $fieldValue }}{{if gt $index 0 -}}
+            {{- if $debug}}
+                //{{$field}}
+            {{- end}}
+            {{- $nameBlock := index $field 1}}
+            {{- $typeBlock := index $field 2}}
+            {{- $rawName := index $typeBlock 1}}
+            {{- if eq $subType "gcho"}}
+                {{- $comp := GetComposition $field $typeName}}
+                {{ if $comp }}
+                    V{{$index}} *{{$comp.Name}}
+                {{- end}}
+            {{- else}}
+                {{- if $nameBlock}} {{$rawName = index $nameBlock 1}} {{end}}
+                {{GetName $rawName}} {{GetType $typeBlock "" nil}}
+            {{- end}}
+
+        {{- end}}{{end}}
+        }
+        {{- end}}{{end}}
+{{else}}{{ if eq $type "seq" }}
+    type {{$typeName}} struct {
+    {{- range $index, $field := $fieldBlock }}{{if gt $index 0 -}}
+        {{- $fieldType := index $field 0}}
+        {{- if $debug}}
+            //{{$field}}
+        {{end}}
+        {{- if eq $fieldType "rep"}}
+            {{- $typeBlock := index $field 3}}
+            {{GetName (index $typeBlock 2)}} *{{GetType (index $typeBlock 2) "" nil}} `cbor:"{{index (index $typeBlock 1) 1}},keyasint,omitempty"`
+        {{- else}}
+            {{- $nameBlock := index $field 1}}
+            {{- $typeBlock := index $field 2}}
+            {{- $rawName := index $typeBlock 1}}
+            {{- if $nameBlock}} {{$rawName = index $nameBlock 1}} {{end}}
+            V{{$index}}{{GetName $rawName}} {{GetType $typeBlock "" nil}}
+        {{- end}}
+    {{- end}}{{end}}
+    }
+{{- else }}{{- if eq $type "map" }}
+    {{- $fieldValue := index $fieldBlock 1}}
+    {{- $subType := index $fieldValue 0}}
+    {{if eq $subType "seq"}} type {{$typeName}} struct {
+    {{- range $index, $field := $fieldValue }}{{if gt $index 0 -}}
+        {{- $fieldType := index $field 0}}
+        {{- if $debug}}
+            //{{$field}}
+        {{end}}
+        {{- if eq $fieldType "rep"}}
+            {{- $typeBlock := index $field 3}}
+            V{{$index}}{{GetName (index $typeBlock 2)}} *{{GetType (index $typeBlock 2) "" nil}} `cbor:"{{index (index $typeBlock 1) 1}},keyasint,omitempty"`
+        {{- else}}
+            {{- $nameBlock := index $field 1}}
+            {{- $typeBlock := index $field 2}}
+            {{- $rawName := index $typeBlock 1}}
+            V{{$index}}{{GetName $typeBlock}} {{GetType $typeBlock "" nil}} {{if (index $field 1) }} `cbor:"{{index (index $field 1) 1}},keyasint"` {{end}}
+        {{- end}}{{end}}{{end}}
+    }{{else}}
+        type {{$typeName}} {{GetType $fieldBlock "" nil}}
+    {{end}}
+{{- else}}{{if eq $type "op"}}
+    type {{$typeName}} {{GetType (index $fieldBlock 2) "" nil}}
+{{else}}{{if eq $type "tcho"}}
+    type {{$typeName}} struct {
+    {{- range $index, $field := $fieldBlock }}{{if gt $index 0 -}}
+        {{- $fieldType := index $field 0}}
+        {{- if $debug}}
+            //{{$field}}
+        {{end}}
+        V{{$index}}{{GetName $field}} *{{AddSupportType $field $typeName}}
+    {{- end}}{{end}}
+    }
+{{- else}}{{if eq $type "gen"}}
+    type {{$typeName}} {{ GetGeneric (index $fieldBlock 1) (index $fieldBlock 2)}}
+{{- else}}{{if eq $type "mem"}}
+    type {{$typeName}} {{GetType $fieldBlock "" nil}}
+{{- else}}
+    //todo UNKNOWN {{ $type }}
+{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}{{end}}

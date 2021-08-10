@@ -1,4 +1,4 @@
-package address
+package types
 
 import (
 	"errors"
@@ -12,7 +12,7 @@ type ByronAddress struct {
 }
 
 // ToBech32 implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L429
-func (b ByronAddress) ToBech32(prefix *string) (string, error) {
+func (b *ByronAddress) ToBech32(prefix *string) (string, error) {
 	finalPrefix := ""
 	if prefix == nil {
 		prefixHeader := "addr"
@@ -36,7 +36,7 @@ func (b ByronAddress) ToBech32(prefix *string) (string, error) {
 }
 
 // ToBytes implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L306
-func (b ByronAddress) ToBytes() []byte {
+func (b *ByronAddress) ToBytes() []byte {
 	addr, err := b.ToAddr()
 	if err != nil {
 		log.Panic(err)
@@ -57,7 +57,7 @@ func (b *ByronAddress) ProtocolMagic() uint32 {
 }
 
 // NetworkId implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L202
-func (b ByronAddress) NetworkId() (uint8, error) {
+func (b *ByronAddress) NetworkId() (byte, error) {
 	// premise: during the Byron-era, we had one mainnet (764824073) and many many testnets
 	// with each testnet getting a different protocol magic
 	// in Shelley, this changes so that:

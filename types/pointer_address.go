@@ -1,12 +1,15 @@
-package address
+package types
 
-import "github.com/btcsuite/btcutil/bech32"
+import (
+	"github.com/btcsuite/btcutil/bech32"
+	"github.com/fivebinaries/go-cardano-serialization/lib"
+)
 
 // Pointer implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L609
 type Pointer struct {
-	Slot      Slot
+	Slot      lib.Slot
 	TxIndex   TransactionIndex
-	CertIndex CertificateIndex
+	CertIndex lib.CertificateIndex
 }
 
 // PointerAddress implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L633
@@ -17,12 +20,12 @@ type PointerAddress struct {
 }
 
 // NetworkId implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L455
-func (p PointerAddress) NetworkId() (byte, error) {
+func (p *PointerAddress) NetworkId() (byte, error) {
 	return p.Network, nil
 }
 
 // ToBech32 implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L429
-func (p PointerAddress) ToBech32(prefix *string) (string, error) {
+func (p *PointerAddress) ToBech32(prefix *string) (string, error) {
 	finalPrefix := ""
 	if prefix == nil {
 		prefixHeader := "addr"
@@ -46,7 +49,7 @@ func (p PointerAddress) ToBech32(prefix *string) (string, error) {
 }
 
 // ToBytes implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L282
-func (p PointerAddress) ToBytes() []byte {
+func (p *PointerAddress) ToBytes() []byte {
 	var buf []byte
 	header := 0b0100_0000 | (p.Payment.Kind() << 4) | (p.Network & 0xF)
 	buf = append(buf, header)
@@ -66,7 +69,7 @@ func NewPointerAddress(network uint8, payment *StakeCredential, stake *Pointer) 
 }
 
 // NewEnterpriseAddress implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L525
-func NewPointer(slot Slot, txIndex TransactionIndex, certIndex CertificateIndex) *Pointer {
+func NewPointer(slot lib.Slot, txIndex TransactionIndex, certIndex lib.CertificateIndex) *Pointer {
 	return &Pointer{
 		Slot:      slot,
 		TxIndex:   txIndex,

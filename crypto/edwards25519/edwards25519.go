@@ -56,8 +56,9 @@ func FeCopy(dst, src *FieldElement) {
 	copy(dst[:], src[:])
 }
 
-// FeCMove replaces (f,g) with (g,g) if b == 1;
-// replaces (f,g) with (f,g) if b == 0.
+// Replace (f,g) with (g,g) if b == 1;
+// replace (f,g) with (f,g) if b == 0.
+//
 // Preconditions: b in {0,1}.
 func FeCMove(f, g *FieldElement, b int32) {
 	b = -b
