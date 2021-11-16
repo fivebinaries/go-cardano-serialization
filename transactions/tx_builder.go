@@ -3,6 +3,7 @@ package transactions
 import (
 	"errors"
 	"fmt"
+
 	"github.com/fivebinaries/go-cardano-serialization/bip32"
 	"github.com/fivebinaries/go-cardano-serialization/common"
 	"github.com/fivebinaries/go-cardano-serialization/crypto"
@@ -29,9 +30,9 @@ type MockWitnessSet struct {
 
 // TransactionBuilder implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/tx_builder.rs#L116
 type TransactionBuilder struct {
-	MinimumUTXOval        common.BigNum
-	PoolDeposit           common.BigNum
-	KeyDeposit            common.BigNum
+	MinimumUTXOval        utils.BigNum
+	PoolDeposit           utils.BigNum
+	KeyDeposit            utils.BigNum
 	FeeAlgo               fees.LinearFee
 	Inputs                []TxBuilderInput
 	Outputs               []types.TransactionOutput
@@ -46,9 +47,9 @@ type TransactionBuilder struct {
 }
 
 // NewTransactionBuilder implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/tx_builder.rs#L284
-func NewTransactionBuilder(linearFee *fees.LinearFee, minimumUTXOVal types.Coin, poolDeposit common.BigNum, keyDeposit common.BigNum) TransactionBuilder {
+func NewTransactionBuilder(linearFee *fees.LinearFee, minimumUTXOVal types.Coin, poolDeposit utils.BigNum, keyDeposit utils.BigNum) TransactionBuilder {
 	return TransactionBuilder{
-		MinimumUTXOval:        common.BigNum(minimumUTXOVal),
+		MinimumUTXOval:        utils.BigNum(minimumUTXOVal),
 		PoolDeposit:           poolDeposit,
 		KeyDeposit:            keyDeposit,
 		FeeAlgo:               *linearFee,
@@ -133,7 +134,7 @@ func (t *TransactionBuilder) AddOutput(output *types.TransactionOutput) error {
 	} else {
 		coin = output.Amount.V2SomeArray.V1
 	}
-	if common.BigNum(coin) < minAda {
+	if utils.BigNum(coin) < minAda {
 		return fmt.Errorf("value %v less than the minimum UTXO value %v", coin, minAda)
 	} else {
 		t.Outputs = append(t.Outputs, *output)
@@ -160,11 +161,11 @@ func (t *TransactionBuilder) GetExplicitInput() (types.Value, error) {
 
 // GetImplicitInput implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/tx_builder.rs#L322
 func (t *TransactionBuilder) GetImplicitInput() (types.Value, error) {
-	var withdrawalsSum common.BigNum
-	var certificateRefund common.BigNum
+	var withdrawalsSum utils.BigNum
+	var certificateRefund utils.BigNum
 	var err error
 	for _, w := range *t.Withdrawals {
-		withdrawalsSum, err = withdrawalsSum.CheckedAdd(common.BigNum(w.Value.(types.Coin)))
+		withdrawalsSum, err = withdrawalsSum.CheckedAdd(utils.BigNum(w.Value.(types.Coin)))
 		if err != nil {
 			return types.Value{}, err
 		}

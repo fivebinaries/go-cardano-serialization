@@ -1,17 +1,12 @@
 package common
 
 import (
-	"errors"
 	"github.com/fivebinaries/go-cardano-serialization/bip32"
 	"github.com/fivebinaries/go-cardano-serialization/crypto"
 	"github.com/fivebinaries/go-cardano-serialization/types"
 	"github.com/fivebinaries/go-cardano-serialization/utils"
 	"github.com/fxamacker/cbor/v2"
-	"math/bits"
 )
-
-// BigNum implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#72
-type BigNum uint64
 
 //todo remove
 // Value implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#223
@@ -30,14 +25,8 @@ func HashTransaction(txBody types.TransactionBody) (crypto.TransactionHash, erro
 	return crypto.TransactionHashFromBytes(b2bBytes[:])
 }
 
-// Harden implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L749
-// implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/tx_builder.rs#L492
-func Harden(index uint32) uint32 {
-	return index | 0x80000000
-}
-
 // MinAdaRequired implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#750
-func MinAdaRequired(assets *types.Value, minimumUTXOVal BigNum) BigNum {
+func MinAdaRequired(assets *types.Value, minimumUTXOVal utils.BigNum) utils.BigNum {
 	if assets.V2SomeArray == nil {
 		return minimumUTXOVal
 	}
@@ -56,7 +45,7 @@ func MinAdaRequired(assets *types.Value, minimumUTXOVal BigNum) BigNum {
 		K2: 1,
 	})
 
-	v2 := BigNum(utils.Quot(int64(minimumUTXOVal), adaOnlyUTXOSize) * (utxoEntrySizeWithoutVal + int64(size)))
+	v2 := utils.BigNum(utils.Quot(int64(minimumUTXOVal), adaOnlyUTXOSize) * (utxoEntrySizeWithoutVal + int64(size)))
 	if minimumUTXOVal < v2 {
 		return v2
 	} else {
@@ -98,31 +87,4 @@ func MakeIcarusBootstrapWitness(txBodyHash *crypto.TransactionHash, addr *types.
 		ChainCode:  chainCode,
 		Attributes: attrRaw,
 	}, nil
-}
-
-// CheckedMul implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#159
-func (b *BigNum) CheckedMul(other BigNum) (BigNum, error) {
-	carryOut, res := bits.Mul64(uint64(*b), uint64(other))
-	if carryOut != 0 {
-		return 0, errors.New("overflow")
-	}
-	return BigNum(res), nil
-}
-
-// CheckedAdd implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#173
-func (b *BigNum) CheckedAdd(other BigNum) (BigNum, error) {
-	res, carryOut := bits.Add64(uint64(*b), uint64(other), 0)
-	if carryOut != 0 {
-		return 0, errors.New("overflow")
-	}
-	return BigNum(res), nil
-}
-
-// CheckedSub implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#159
-func (b *BigNum) CheckedSub(other BigNum) (BigNum, error) {
-	res, carryOut := bits.Sub64(uint64(*b), uint64(other), 0)
-	if carryOut != 0 {
-		return 0, errors.New("underflow")
-	}
-	return BigNum(res), nil
 }

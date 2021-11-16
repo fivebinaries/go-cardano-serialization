@@ -1,6 +1,6 @@
 package types
 
-import "github.com/fivebinaries/go-cardano-serialization/common"
+import "github.com/fivebinaries/go-cardano-serialization/utils"
 
 // CheckedAdd implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#L256
 func (v *Value) CheckedAdd(rhs *Value) (Value, error) {
@@ -9,8 +9,8 @@ func (v *Value) CheckedAdd(rhs *Value) (Value, error) {
 	multiasset := v.GetMultiasset()
 	multiassetR := rhs.GetMultiasset()
 
-	num := common.BigNum(coin)
-	resCoin, err := num.CheckedAdd(common.BigNum(coinR))
+	num := utils.BigNum(coin)
+	resCoin, err := num.CheckedAdd(utils.BigNum(coinR))
 	if err != nil {
 		return Value{}, err
 	}

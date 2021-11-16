@@ -1,13 +1,14 @@
 package transactions
 
 import (
+	"testing"
+
 	"github.com/fivebinaries/go-cardano-serialization/bip32"
-	"github.com/fivebinaries/go-cardano-serialization/common"
 	"github.com/fivebinaries/go-cardano-serialization/crypto"
 	"github.com/fivebinaries/go-cardano-serialization/fees"
 	"github.com/fivebinaries/go-cardano-serialization/lib"
 	"github.com/fivebinaries/go-cardano-serialization/types"
-	"testing"
+	"github.com/fivebinaries/go-cardano-serialization/utils"
 )
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/tx_builder.rs#L482
@@ -38,23 +39,23 @@ func TestBuildTxWithChange(t *testing.T) {
 	}
 	txBuilder := NewTransactionBuilder(&linearFee, 1, 1, 1)
 	spend := rootKey15().
-		Derive(common.Harden(1852)).
-		Derive(common.Harden(1815)).
-		Derive(common.Harden(0)).
+		Derive(utils.Harden(1852)).
+		Derive(utils.Harden(1815)).
+		Derive(utils.Harden(0)).
 		Derive(0).
 		Derive(0).
 		Public()
 	//changeKey := rootKey15().
-	//	Derive(common.Harden(1852)).
-	//	Derive(common.Harden(1815)).
-	//	Derive(common.Harden(0)).
+	//	Derive(utils.Harden(1852)).
+	//	Derive(utils.Harden(1815)).
+	//	Derive(utils.Harden(0)).
 	//	Derive(1).
 	//	Derive(0).
 	//	Public()
 	stake := rootKey15().
-		Derive(common.Harden(1852)).
-		Derive(common.Harden(1815)).
-		Derive(common.Harden(0)).
+		Derive(utils.Harden(1852)).
+		Derive(utils.Harden(1815)).
+		Derive(utils.Harden(0)).
 		Derive(2).
 		Derive(0).
 		Public()

@@ -1,8 +1,8 @@
 package fees
 
 import (
-	"github.com/fivebinaries/go-cardano-serialization/common"
 	"github.com/fivebinaries/go-cardano-serialization/types"
+	"github.com/fivebinaries/go-cardano-serialization/utils"
 	"github.com/fxamacker/cbor/v2"
 )
 
@@ -18,9 +18,9 @@ func MinFee(tx *types.Transaction, fee *LinearFee) (types.Coin, error) {
 	if err != nil {
 		return 0, err
 	}
-	txBodyLen := common.BigNum(len(txBody))
-	if res, err := txBodyLen.CheckedMul(common.BigNum(uint64(fee.Coefficient))); err == nil {
-		if res, err := res.CheckedAdd(common.BigNum(uint64(fee.Constant))); err == nil {
+	txBodyLen := utils.BigNum(len(txBody))
+	if res, err := txBodyLen.CheckedMul(utils.BigNum(uint64(fee.Coefficient))); err == nil {
+		if res, err := res.CheckedAdd(utils.BigNum(uint64(fee.Constant))); err == nil {
 			return types.Coin(res), nil
 		}
 	}

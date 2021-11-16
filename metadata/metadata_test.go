@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"testing"
+
 	"github.com/fivebinaries/go-cardano-serialization/hash_map"
 	"github.com/fivebinaries/go-cardano-serialization/types"
 	"github.com/google/go-cmp/cmp"
-	"testing"
 )
 
 // implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/metadata.rs#L809
@@ -420,8 +421,11 @@ func TestAllegraMetadata(t *testing.T) {
 		t.Fatal(err)
 	}
 	md2DeserBytes, err := md2Deser.ToBytes()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !bytes.Equal(md2DeserBytes, md2Bytes) {
-		t.Fatal("unexpected md2_deser")
+		t.Fatal(cmp.Diff(md2DeserBytes, md2Bytes))
 	}
 
 }

@@ -2,15 +2,17 @@ package metadata
 
 import (
 	"errors"
+
 	"github.com/fivebinaries/go-cardano-serialization/common"
 	"github.com/fivebinaries/go-cardano-serialization/crypto"
 	"github.com/fivebinaries/go-cardano-serialization/hash_map"
 	"github.com/fivebinaries/go-cardano-serialization/types"
+	"github.com/fivebinaries/go-cardano-serialization/utils"
 	"github.com/fxamacker/cbor/v2"
 )
 
 // TransactionMetadatumLabel implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/metadata.rs#222
-type TransactionMetadatumLabel common.BigNum
+type TransactionMetadatumLabel utils.BigNum
 
 // GeneralTransactionMetadata implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/metadata.rs#251
 type GeneralTransactionMetadata map[TransactionMetadatumLabel]TransactionMetadatum
