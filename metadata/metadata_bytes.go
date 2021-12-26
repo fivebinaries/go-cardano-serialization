@@ -7,7 +7,8 @@ import (
 type MetadataBytes []byte
 
 func (m *MetadataBytes) UnmarshalCBOR(bytes []byte) error {
-	panic("implement me")
+	m = (*MetadataBytes)(&bytes)
+	return nil
 }
 
 func (m *MetadataBytes) AsMap() (MetadataMap, error) {

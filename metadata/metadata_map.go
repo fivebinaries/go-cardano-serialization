@@ -2,13 +2,15 @@ package metadata
 
 import (
 	"errors"
+
 	"github.com/fivebinaries/go-cardano-serialization/hash_map"
+	"github.com/fxamacker/cbor/v2"
 )
 
 type MetadataMap hash_map.HashMap
 
 func (m *MetadataMap) UnmarshalCBOR(bytes []byte) error {
-	panic("implement me")
+	return cbor.Unmarshal(bytes, m)
 }
 
 func (m *MetadataMap) AsMap() (MetadataMap, error) {

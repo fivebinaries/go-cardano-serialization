@@ -2,12 +2,15 @@ package metadata
 
 import (
 	"errors"
+
+	"github.com/fxamacker/cbor/v2"
 )
 
 type MetadataList []TransactionMetadatum
 
 func (m *MetadataList) UnmarshalCBOR(bytes []byte) error {
-	panic("implement me")
+	err := cbor.Unmarshal(bytes, m)
+	return err
 }
 
 func (m *MetadataList) AsMap() (MetadataMap, error) {
