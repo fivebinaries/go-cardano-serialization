@@ -32,7 +32,7 @@ func (v *Value) CheckedAdd(rhs *Value) (Value, error) {
 			V2: multiassetR,
 		}}, nil
 	default:
-		panic("implement me")
+		return Value{}, nil
 	}
 }
 

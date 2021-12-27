@@ -3,6 +3,8 @@ package metadata
 import (
 	"errors"
 	"strconv"
+
+	"github.com/fxamacker/cbor/v2"
 )
 
 type MetadataInt struct {
@@ -11,7 +13,20 @@ type MetadataInt struct {
 }
 
 func (m *MetadataInt) UnmarshalCBOR(bytes []byte) error {
-	panic("implement me")
+	var num int
+	err := cbor.Unmarshal(bytes, &num)
+	if err != nil {
+		return err
+	}
+
+	if num >= 0 {
+		m.IsUnsigned = true
+	} else {
+		m.IsUnsigned = false
+	}
+	m.Value = uint64(num)
+
+	return nil
 }
 
 func (m *MetadataInt) AsMap() (MetadataMap, error) {

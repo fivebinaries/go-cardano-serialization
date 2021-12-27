@@ -191,11 +191,6 @@ func (t *TransactionBuilder) GetImplicitInput() (types.Value, error) {
 	return res, err
 }
 
-// GetDeposit implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/utils.rs#L650
-func (t *TransactionBuilder) GetDeposit() (types.Value, error) {
-	panic("implement me")
-}
-
 // AddChangeIfNeeded implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/tx_builder.rs#L354
 /// Warning: this function will mutate the /fee/ field
 func (t *TransactionBuilder) AddChangeIfNeeded(addressInput types.Address) (bool, error) {
