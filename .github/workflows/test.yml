@@ -3,13 +3,13 @@ name: Test
 on:
   push:
     branches: 
-      - master
+      - main
       - feat**
       - test**
       - docs**
       - ref**
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   test:
