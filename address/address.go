@@ -59,7 +59,10 @@ func NewAddress(raw string) (addr Address, err error) {
 
 		return &byron, nil
 
-	// 0000, 0001, 0010, 0011: base address
+	// 0000: base address: keyhash28,keyhash28
+	// 0001: base address: scripthash28,keyhash28
+	// 0010: base address: keyhash28,scripthash28
+	// 0011: base address: scripthash28,scripthash28
 	case 0b0000, 0b0001, 0b0010, 0b0011:
 		baseAddr := BaseAddress{
 			Network: networks[netId],
@@ -68,13 +71,15 @@ func NewAddress(raw string) (addr Address, err error) {
 		}
 		return &baseAddr, nil
 
-	// 0100, 0101: pointer address
+	// 0100: pointer address: keyhash28, 3 variable length uint
+	// 0101: pointer address: scripthash28, 3 variable length uint
 	case 0b0100, 0b0101:
 		var pointerAddr PointerAddress
 
 		return &pointerAddr, nil
 
-		// Enterprise type
+	// 0110: enterprise address: keyhash28
+	// 0111: enterprise address: scripthash28
 	case 0b0110, 0b0111:
 		// header + keyhash
 

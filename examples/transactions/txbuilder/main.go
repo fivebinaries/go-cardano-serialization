@@ -57,10 +57,11 @@ func harden(num uint) uint32 {
 	return uint32(0x80000000 + num)
 }
 
-func generateBaseAddress(net *network.NetworkInfo, rootKey bip32.XPrv) (addr *address.BaseAddress, err error) {
+func generateBaseAddress(net *network.NetworkInfo, rootKey bip32.XPrv) (addr *address.BaseAddress, utxoPrvKey bip32.XPrv, err error) {
 	accountKey := rootKey.Derive(harden(1852)).Derive(harden(1815)).Derive(harden(0))
 
-	utxoPubKey := accountKey.Derive(0).Derive(0).Public()
+	utxoPrvKey = accountKey.Derive(0).Derive(0)
+	utxoPubKey := utxoPrvKey.Public()
 	utxoPubKeyHash := utxoPubKey.PublicKey().Hash()
 
 	stakeKey := accountKey.Derive(2).Derive(0).Public()
@@ -94,18 +95,22 @@ func main() {
 
 	rootKey := createRootKey(mnemFlag)
 
-	sourceAddr, err := generateBaseAddress(network.TestNet(), rootKey)
+	// Generate a base address on testnet from the rootkey
+	// the utxoPrvKey is used to sign the transaction
+	sourceAddr, utxoPrvKey, err := generateBaseAddress(network.TestNet(), rootKey)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	fmt.Println("\nSource Address: ", sourceAddr)
+	// If no sendTo address is provided use the source address
+	if receiverAddr == "" {
+		receiverAddr = sourceAddr.String()
+	}
 
 	receiver, err := address.NewAddress(receiverAddr)
 	if err != nil {
 		log.Fatal("Address create:", err)
 	}
-	fmt.Println("Receiver Address: ", receiverAddr)
 
 	utxos, err := cli.UTXOs(sourceAddr)
 	if err != nil {
@@ -118,12 +123,12 @@ func main() {
 
 	builder := tx.NewTxBuilder(
 		*pr,
-		[]bip32.XPrv{rootKey},
+		[]bip32.XPrv{utxoPrvKey},
 	)
 
 	// Send 5000000 lovelace or 5 ADA
 	sendAmount := 5000000
-	firstMatchInput := tx.TxInput{}
+	var firstMatchInput tx.TxInput
 
 	// Loop through utxos to find first input with enough ADA
 	for _, utxo := range utxos {
@@ -162,6 +167,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	txHex, _ := txFinal.Hex()
-	fmt.Println("\nTx Hex: ", txHex)
+	txHash, err := cli.SubmitTx(txFinal)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(txHash)
 }

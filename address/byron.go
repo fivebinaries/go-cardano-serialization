@@ -12,6 +12,7 @@ type ByronAddressAttributes struct {
 }
 
 type ByronAddress struct {
+	Hash       []byte
 	Attributes ByronAddressAttributes
 }
 

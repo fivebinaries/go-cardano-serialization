@@ -22,4 +22,4 @@
 	https://github.com/fivebinaries/go-cardano-serialization/issues/new
 */
 
-package gcs
+package gada

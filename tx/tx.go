@@ -15,6 +15,7 @@ type Tx struct {
 	Metadata interface{}
 }
 
+// NewTx returns a pointer to a new Transaction
 func NewTx() *Tx {
 	return &Tx{
 		Body:    NewTxBody(),
@@ -22,11 +23,13 @@ func NewTx() *Tx {
 	}
 }
 
+// Bytes returns a slice of cbor marshalled bytes
 func (t *Tx) Bytes() ([]byte, error) {
 	bytes, err := cbor.Marshal(t)
 	return bytes, err
 }
 
+// Hex returns hex encoding of the transacion bytes
 func (t *Tx) Hex() (string, error) {
 	bytes, err := t.Bytes()
 	if err != nil {
@@ -35,6 +38,7 @@ func (t *Tx) Hex() (string, error) {
 	return hex.EncodeToString(bytes), nil
 }
 
+// Hash performs a blake2b hash of the transaction body and returns a slice of [32]byte
 func (t *Tx) Hash() ([32]byte, error) {
 	txBody, err := cbor.Marshal(t.Body)
 	if err != nil {
@@ -46,6 +50,8 @@ func (t *Tx) Hash() ([32]byte, error) {
 	return txHash, nil
 }
 
+// Fee returns the fee(in lovelaces) required by the transaction from the linear formula
+// fee = txFeeFixed + txFeePerByte*tx_len_in_bytes
 func (t *Tx) Fee(lfee *fees.LinearFee) (uint, error) {
 	txCbor, err := cbor.Marshal(t)
 	if err != nil {
@@ -57,16 +63,19 @@ func (t *Tx) Fee(lfee *fees.LinearFee) (uint, error) {
 	return fee, nil
 }
 
+// SetFee sets the fee
 func (t *Tx) SetFee(fee uint) {
 	t.Body.Fee = uint64(fee)
 }
 
+// AddInputs adds the inputs to the transaction body
 func (t *Tx) AddInputs(inputs ...*TxInput) error {
 	t.Body.Inputs = append(t.Body.Inputs, inputs...)
 
 	return nil
 }
 
+// AddOutputs adds the outputs to the transaction body
 func (t *Tx) AddOutputs(outputs ...*TxOutput) error {
 	t.Body.Outputs = append(t.Body.Outputs, outputs...)
 
