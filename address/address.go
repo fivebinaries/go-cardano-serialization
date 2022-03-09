@@ -95,6 +95,19 @@ func NewAddress(raw string) (addr Address, err error) {
 			Payment: *readAddrCred(data, header, 4, 1),
 		}
 		return &res, nil
+	case 0b1110, 0b1111:
+		const rewardAddrSize = 1 + 28
+		if len(data) < rewardAddrSize {
+			return nil, errors.New("cbor not enough error")
+		}
+		if len(data) > rewardAddrSize {
+			return nil, errors.New("cbor trailing data error")
+		}
+		res := RewardAddress{
+			Network: networks[netId],
+			Stake:   *readAddrCred(data, header, 4, 1)}
+		return &res, nil
+
 	default:
 		return nil, ErrUnsupportedAddress
 	}
