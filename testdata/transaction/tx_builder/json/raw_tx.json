@@ -1,0 +1,12 @@
+{
+    "sourceAddress": "addr_test1qrf96nk9l8snyxd5a2x460rvsjdjkthmesxrq8x2fy5r0f0hnrvhwtnsuxzhvp752vuuxtjptuz7wfgtthedq6lthf6qhf562f",
+    "receiverAddress": "addr_test1qqq4rw80lxmunx05mss95yz9652ncsj6scxlcch0r8yqht30glrqr64x0week9f7vgrv36wdygeqr4zs3q2dtvu34gcqsavqs8",
+    "amountLovelace": 5000000,
+    "changeAddress": "addr_test1qrf96nk9l8snyxd5a2x460rvsjdjkthmesxrq8x2fy5r0f0hnrvhwtnsuxzhvp752vuuxtjptuz7wfgtthedq6lthf6qhf562f",
+    "slotNo": 55267575,
+    "utxoIn": {
+        "txHash": "fcbc18c64cdf133f33dd319c5105dc7c4972f2d646ae276fbd00cf7f39f8c380",
+        "txIndex": 0,
+        "amountLovelace": 10000000
+    }
+}
