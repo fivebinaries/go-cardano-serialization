@@ -2,8 +2,9 @@ package crypto
 
 import (
 	"errors"
-	"golang.org/x/crypto/blake2b"
 	"log"
+
+	"golang.org/x/crypto/blake2b"
 )
 
 const (
