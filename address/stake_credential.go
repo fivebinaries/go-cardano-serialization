@@ -1,53 +1,27 @@
 package address
 
-import "github.com/fivebinaries/go-cardano-serialization/crypto"
+type StakeCredentialType byte
 
-// StakeCredential implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L67
+const (
+	KeyStakeCredentialType StakeCredentialType = iota
+	ScriptStakeCredentialType
+)
+
 type StakeCredential struct {
-	Key    *crypto.Ed25519KeyHash
-	Script *crypto.ScriptHash
+	Kind    StakeCredentialType `cbor:"0,keyasint,omitempty"`
+	Payload []byte              `cbor:"1,keyasint,omitempty"`
 }
 
-// StakeCredentialFromKeyHash implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L79
-func StakeCredentialFromKeyHash(hash []byte) *StakeCredential {
-	var key crypto.Ed25519KeyHash
-	copy(key[:], hash[:crypto.Ed25519KeyHashLen])
+func NewKeyStakeCredential(hash []byte) *StakeCredential {
 	return &StakeCredential{
-		Key: &key,
+		Kind:    KeyStakeCredentialType,
+		Payload: hash,
 	}
 }
 
-// StakeCredentialFromScriptHash implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L83
-func StakeCredentialFromScriptHash(hash []byte) *StakeCredential {
-	var script crypto.ScriptHash
-	copy(script[:], hash[:crypto.ScriptHashLen])
+func NewScriptStakeCredential(hash []byte) *StakeCredential {
 	return &StakeCredential{
-		Script: &script,
+		Kind:    ScriptStakeCredentialType,
+		Payload: hash,
 	}
-}
-
-// readAddrCred implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L339
-func readAddrCred(data []byte, header byte, bit byte, pos int) *StakeCredential {
-	hashBytes := data[pos : pos+crypto.Ed25519KeyHashLen]
-	if header&(1<<bit) == 0 {
-		return StakeCredentialFromKeyHash(hashBytes)
-	}
-	return StakeCredentialFromScriptHash(hashBytes)
-}
-
-// Kind implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L101
-func (s *StakeCredential) Kind() byte {
-	// don't use len(s.Key) != 0
-	if s.Key != nil {
-		return 0
-	}
-	return 1
-}
-
-// ToRawBytes implements https://github.com/Emurgo/cardano-serialization-lib/blob/0e89deadf9183a129b9a25c0568eed177d6c6d7c/rust/src/address.rs#L108
-func (s *StakeCredential) ToRawBytes() []byte {
-	if s.Key != nil {
-		return (*s.Key)[:]
-	}
-	return (*s.Script)[:]
 }
