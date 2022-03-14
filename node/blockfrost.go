@@ -69,6 +69,11 @@ func (b *blockfrostNode) ProtocolParameters() (p protocol.Protocol, err error) {
 		return
 	}
 
+	minU, err := strconv.Atoi(params.MinUtxo)
+	if err != nil {
+		return
+	}
+
 	return protocol.Protocol{
 		TxFeePerByte: uint(params.MinFeeA),
 		TxFeeFixed:   uint(params.MinFeeB),
@@ -77,6 +82,7 @@ func (b *blockfrostNode) ProtocolParameters() (p protocol.Protocol, err error) {
 			uint8(params.ProtocolMajorVer),
 			uint8(params.ProtocolMinorVer),
 		},
+		MinUTXOValue: uint(minU),
 	}, nil
 }
 
