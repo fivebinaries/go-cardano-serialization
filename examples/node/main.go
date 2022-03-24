@@ -16,6 +16,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/fivebinaries/go-cardano-serialization/address"
 	"github.com/fivebinaries/go-cardano-serialization/network"
 	"github.com/fivebinaries/go-cardano-serialization/node"
 )
@@ -45,4 +46,18 @@ func main() {
 	}
 
 	fmt.Printf("Tip: %+v\n\n", prettyPrint(tip))
+
+	addr, err := address.NewAddress(
+		"addr_test1qqe6zztejhz5hq0xghlf72resflc4t2gmu9xjlf73x8dpf88d78zlt4rng3ccw8g5vvnkyrvt96mug06l5eskxh8rcjq2wyd63",
+	)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	utxos, err := cli.UTXOs(addr)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Printf("UTXOS: %+v\n\n", prettyPrint(utxos))
 }

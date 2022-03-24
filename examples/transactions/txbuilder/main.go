@@ -122,7 +122,7 @@ func main() {
 	// outputs and fee.
 
 	builder := tx.NewTxBuilder(
-		*pr,
+		pr,
 		[]bip32.XPrv{utxoPrvKey},
 	)
 

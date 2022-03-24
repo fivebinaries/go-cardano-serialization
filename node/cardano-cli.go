@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 
 	"github.com/fivebinaries/go-cardano-serialization/address"
 	"github.com/fivebinaries/go-cardano-serialization/network"
@@ -42,29 +45,109 @@ func (cli *cardanoCli) execCommand(args ...string) (data []byte, err error) {
 	return buf.Bytes(), nil
 }
 
-func (cli *cardanoCli) ProtocolParameters() (p *protocol.Protocol, err error) {
-	data, err := cli.execCommand("query", "tip")
+func (cli *cardanoCli) ProtocolParameters() (p protocol.Protocol, err error) {
+	data, err := cli.execCommand("query", "protocol-parameters")
 
-	if err := json.Unmarshal(data, p); err != nil {
+	if err := json.Unmarshal(data, &p); err != nil {
 		return p, err
 	}
 	return
 }
 
-func (cli *cardanoCli) UTXOs(address.Address) (txIs []tx.TxInput, err error) {
+func (cli *cardanoCli) UTXOs(addr address.Address) (txIs []tx.TxInput, err error) {
+	data, err := cli.execCommand("query", "utxos", fmt.Sprintf("--address %s", addr))
+	if err != nil {
+		return
+	}
+
+	ldata := strings.Split(string(data), "\n")
+	lenData := len(data)
+
+	if lenData < 3 {
+		return
+	}
+
+	for _, it := range ldata[2 : lenData-1] {
+		sec := strings.Fields(it)
+		txIx, err := strconv.Atoi(sec[1])
+		if err != nil {
+			return txIs, err
+		}
+
+		amSec := strings.Fields(sec[2])
+
+		amount, err := strconv.Atoi(amSec[0])
+		if err != nil {
+			return txIs, err
+		}
+
+		utxo := *tx.NewTxInput(
+			sec[0],
+			uint16(txIx),
+			uint(amount),
+		)
+
+		txIs = append(txIs, utxo)
+	}
 	return
 }
 
 func (cli *cardanoCli) QueryTip() (tip NetworkTip, err error) {
+	data, err := cli.execCommand("query", "tip")
+
+	if err := json.Unmarshal(data, &tip); err != nil {
+		return tip, err
+	}
 	return
 }
 
-func (cli *cardanoCli) SubmitTx(tx.Tx) (err error) {
+func (cli *cardanoCli) SubmitTx(txFinal tx.Tx) (txHash string, err error) {
+	type sb struct {
+		TxType      string `json:"type"`
+		Description string `json:"description"`
+		CborHex     string `json:"cborHex"`
+	}
+
+	txHex, err := txFinal.Hex()
+	if err != nil {
+		return
+	}
+
+	outTx := sb{
+		CborHex: txHex,
+	}
+
+	tmpFile, err := ioutil.TempFile(os.TempDir(), "gada-tx-")
+	if err != nil {
+		return
+	}
+
+	defer os.Remove(tmpFile.Name())
+
+	data, err := json.MarshalIndent(outTx, "", "	")
+	if err != nil {
+		return
+	}
+
+	if _, err := tmpFile.Write((data)); err != nil {
+		return txHash, err
+	}
+
+	cliData, err := cli.execCommand("submit", fmt.Sprintf("--tx-file %s", tmpFile.Name()))
+	if err != nil {
+		return
+	}
+
+	txHash = string(cliData)
+
+	if err := tmpFile.Close(); err != nil {
+		return txHash, err
+	}
 	return
 }
 
 // NewCardanoCliNode returns a wrapper for the cardano-cli with the Node interface
-func NewCardanoCliNode(network *network.NetworkInfo, cliPaths ...string) *cardanoCli {
+func NewCardanoCliNode(network *network.NetworkInfo, cliPaths ...string) Node {
 	var cliPath string
 
 	if len(cliPaths) > 0 {

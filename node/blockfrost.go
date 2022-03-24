@@ -63,13 +63,18 @@ func (b *blockfrostNode) UTXOs(addr address.Address) (txIs []tx.TxInput, err err
 }
 
 // ProtocolParameters queries the protocol parameters of the network.
-func (b *blockfrostNode) ProtocolParameters() (p *protocol.Protocol, err error) {
+func (b *blockfrostNode) ProtocolParameters() (p protocol.Protocol, err error) {
 	params, err := b.client.LatestEpochParameters(context.TODO())
 	if err != nil {
 		return
 	}
 
-	return &protocol.Protocol{
+	minU, err := strconv.Atoi(params.MinUtxo)
+	if err != nil {
+		return
+	}
+
+	return protocol.Protocol{
 		TxFeePerByte: uint(params.MinFeeA),
 		TxFeeFixed:   uint(params.MinFeeB),
 		MaxTxSize:    uint(params.MaxTxSize),
@@ -77,6 +82,7 @@ func (b *blockfrostNode) ProtocolParameters() (p *protocol.Protocol, err error) 
 			uint8(params.ProtocolMajorVer),
 			uint8(params.ProtocolMinorVer),
 		},
+		MinUTXOValue: uint(minU),
 	}, nil
 }
 
@@ -119,7 +125,7 @@ func (b *blockfrostNode) SubmitTx(txFinal tx.Tx) (txHash string, err error) {
 }
 
 // NewBlockfrostClient returns a wrapper for the blockfrost API/SDK with Node interface
-func NewBlockfrostClient(projectId string, network *network.NetworkInfo) *blockfrostNode {
+func NewBlockfrostClient(projectId string, network *network.NetworkInfo) Node {
 	var serverUrl string
 	if network.NetworkId == 0 {
 		serverUrl = blockfrost.CardanoTestNet
@@ -145,14 +151,14 @@ func NewBlockfrostClient(projectId string, network *network.NetworkInfo) *blockf
 // QueryTip is the equivalent of
 // `cardano-cli query tip ${network_parameters}`
 //
-func (b *blockfrostNode) QueryTip() (nt *NetworkTip, err error) {
+func (b *blockfrostNode) QueryTip() (nt NetworkTip, err error) {
 	block, err := b.client.BlockLatest(context.TODO())
 
 	if err != nil {
 		return
 	}
 
-	nt = &NetworkTip{
+	nt = NetworkTip{
 		Slot:  uint(block.Slot),
 		Epoch: uint(block.Epoch),
 		Block: uint(block.Height),
