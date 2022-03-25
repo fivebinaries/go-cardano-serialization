@@ -7,7 +7,7 @@ Package address implements structs for Cardano address types.
 ## Installation
 
 ```bash
-go get -u github.com/fivebinaries/go-cardano-serialization/network
+go get -u github.com/fivebinaries/go-cardano-serialization/address
 ```
 
 ## Overview 
@@ -18,6 +18,7 @@ Address handles serialization and deserilization of addresses used on the Cardan
 - Enterprise Address
 - Base Address
 - Pointer Address
+- Reward Address
 
 Address package also provides an `Address` interface and utility to load address from bech32/base58 encoded strings automatically into one of the supported address types.
 

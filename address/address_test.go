@@ -59,6 +59,13 @@ func TestAddressInit(t *testing.T) {
 			err:         nil,
 			addrType:    &address.EnterpriseAddress{},
 		},
+		{
+			description: "valid yoroi legacy address",
+			address:     "Ae2tdPwUPEZFRbyhz3cpfC2CumGzNkFBN2L42rcUc2yjQpEkxDbkPodpMAi",
+			network:     *network.MainNet(),
+			err:         nil,
+			addrType:    &address.ByronAddress{},
+		},
 	}
 
 	for _, scenario := range addressesScenarios {

@@ -1,11 +1,12 @@
 <p align="center">
-  <a href="https://blockfrost.io" target="_blank" align="center">
+  <a href="https://fivebinaries.com" target="_blank" align="center">
     <img src="https://raw.githubusercontent.com/fivebinaries/go-cardano-serialization/dev/.github/go-cardano-serialization-logo.svg" width="100">
   </a>
   <br />
 </p>
 
 # Go Cardano Serialization Library
+[![GoDoc](https://godoc.org/github.com/fivebinaries/go-cardano-serialization?status.svg)](https://godoc.org/github.com/fivebinaries/go-cardano-serialization)
 
 Golang library for serialization and deserialiation of Cardano data structures. 
 

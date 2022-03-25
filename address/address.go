@@ -2,6 +2,7 @@ package address
 
 import (
 	"errors"
+	"log"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -54,7 +55,8 @@ func NewAddress(raw string) (addr Address, err error) {
 		var byron ByronAddress
 
 		if err := cbor.Unmarshal(data, &byron); err != nil {
-			return &ByronAddress{}, err
+			log.Println(err)
+			return &byron, err
 		}
 
 		return &byron, nil
@@ -74,9 +76,35 @@ func NewAddress(raw string) (addr Address, err error) {
 	// 0100: pointer address: keyhash28, 3 variable length uint
 	// 0101: pointer address: scripthash28, 3 variable length uint
 	case 0b0100, 0b0101:
-		var pointerAddr PointerAddress
+		const ptrAddrMinSize = 1 + 28 + 1 + 1 + 1
+		if len(data) < ptrAddrMinSize {
+			return nil, errors.New("cbor not enough error")
+		}
+		byteIndex := 1
+		paymentCred := readAddrCred(data, header, 4, 1)
+		byteIndex += 28
+		slot, slot_bytes, err := VariableNatDecode(data[byteIndex:])
+		if err != nil {
+			return nil, err
+		}
+		byteIndex += slot_bytes
+		txIndex, txBytes, err := VariableNatDecode(data[byteIndex:])
+		if err != nil {
+			return nil, err
+		}
+		byteIndex += txBytes
+		certIndex, certBytes, err := VariableNatDecode(data[byteIndex:])
+		if err != nil {
+			return nil, err
+		}
+		byteIndex += certBytes
 
-		return &pointerAddr, nil
+		if byteIndex < len(data) {
+			return nil, errors.New("cbor trailing data error")
+		}
+
+		res := NewPointerAddress(networks[netId], *paymentCred, *NewPointer(slot, txIndex, certIndex))
+		return res, nil
 
 	// 0110: enterprise address: keyhash28
 	// 0111: enterprise address: scripthash28
