@@ -6,7 +6,7 @@ Package tx implements structs for serialization and deserialization of cardano t
 ## Installation
 
 ```bash
-go get -u github.com/fivebinaries/go-cardano-serialization/tx
+go get github.com/fivebinaries/go-cardano-serialization/tx
 ```
 
 ## License

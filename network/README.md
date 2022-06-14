@@ -6,7 +6,7 @@ Package network implements types/utilities for cardano mainnet and testnet IDs a
 ## Installation
 
 ```bash
-go get -u github.com/fivebinaries/go-cardano-serialization/network
+go get github.com/fivebinaries/go-cardano-serialization/network
 ```
 
 ## License
