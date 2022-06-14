@@ -12,7 +12,7 @@ Golang library for serialization and deserialiation of Cardano data structures.
 ## Installation
 
 ```bash
-$ go get https://github.com/fivebinaries/go-cardano-serialization
+$ go get github.com/fivebinaries/go-cardano-serialization
 ```
 
 ## Usage
