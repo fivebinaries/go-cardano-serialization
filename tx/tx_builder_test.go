@@ -118,7 +118,10 @@ func readJson(fp string) (data []byte, err error) {
 
 func TestTxBuilderRaw(t *testing.T) {
 	createRootKey()
+
+	packagepath = strings.Replace(packagepath, "\\", "/", -1)
 	basepath := packagepath[:strings.LastIndex(packagepath, "/")]
+
 	pr, err := protocol.LoadProtocol(filepath.Join(basepath, "testdata", "protocol", "protocol.json"))
 	if err != nil {
 		log.Fatal(err)
