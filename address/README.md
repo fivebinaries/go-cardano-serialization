@@ -7,7 +7,7 @@ Package address implements structs for Cardano address types.
 ## Installation
 
 ```bash
-go get -u github.com/fivebinaries/go-cardano-serialization/address
+go get github.com/fivebinaries/go-cardano-serialization/address
 ```
 
 ## Overview 

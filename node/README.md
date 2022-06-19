@@ -7,7 +7,7 @@ Package node provides an interface for cardano backends/nodes. Node implements t
 ## Installation
 
 ```bash
-go get -u github.com/fivebinaries/go-cardano-serialization/node
+go get github.com/fivebinaries/go-cardano-serialization/node
 ```
 
 ## Usage

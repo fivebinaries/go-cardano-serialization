@@ -5,7 +5,7 @@ Folder examples provides examples to get you started on creating addresses, buil
 
 ## Installation
 ```bash
-$ go get -u github.com/fivebinaries/go-cardano-serialization
+$ go get github.com/fivebinaries/go-cardano-serialization
 ```
 
 ## Examples
