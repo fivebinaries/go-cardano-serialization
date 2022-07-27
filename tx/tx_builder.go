@@ -21,12 +21,13 @@ func (tb *TxBuilder) Sign(xprv bip32.XPrv) {
 
 // Build creates hash of transaction, signs the hash using supplied witnesses and adds them to the transaction.
 func (tb *TxBuilder) Build() (tx Tx, err error) {
+	hash, err := tb.tx.Hash()
+	if err != nil {
+		return tx, err
+	}
+
 	txKeys := []*VKeyWitness{}
 	for _, prv := range tb.xprvs {
-		hash, err := tb.tx.Hash()
-		if err != nil {
-			return tx, err
-		}
 		publicKey := prv.Public().PublicKey()
 		signature := prv.Sign(hash[:])
 
@@ -85,11 +86,14 @@ func (tb TxBuilder) MinFee() (fee uint) {
 			Fee:     tb.tx.Body.Fee,
 			TTL:     tb.tx.Body.TTL,
 		},
-		Witness: tb.tx.Witness,
+		Witness:  tb.tx.Witness,
+		Valid:    true,
+		Metadata: tb.tx.Metadata,
 	}
+	feeTx.CalculateAuxiliaryDataHash()
 	if len(feeTx.Witness.Keys) == 0 {
 		vWitness := NewVKeyWitness(
-			make([]byte, 64),
+			make([]byte, 32),
 			make([]byte, 64),
 		)
 		feeTx.Witness.Keys = append(feeTx.Witness.Keys, vWitness)
@@ -104,6 +108,9 @@ func (tb TxBuilder) MinFee() (fee uint) {
 
 	}
 	lfee := fees.NewLinearFee(tb.protocol.TxFeePerByte, tb.protocol.TxFeeFixed)
+	// The fee may have increased enough to increase the number of bytes, so do one more pass
+	fee, _ = feeTx.Fee(lfee)
+	feeTx.Body.Fee = uint64(fee)
 	fee, _ = feeTx.Fee(lfee)
 
 	return

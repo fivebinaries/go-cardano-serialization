@@ -2,6 +2,7 @@ package tx
 
 import (
 	"encoding/hex"
+	"fmt"
 
 	"github.com/fivebinaries/go-cardano-serialization/fees"
 	"github.com/fxamacker/cbor/v2"
@@ -12,6 +13,7 @@ type Tx struct {
 	_        struct{} `cbor:",toarray"`
 	Body     *TxBody
 	Witness  *Witness
+	Valid    bool
 	Metadata interface{}
 }
 
@@ -20,11 +22,15 @@ func NewTx() *Tx {
 	return &Tx{
 		Body:    NewTxBody(),
 		Witness: NewTXWitness(),
+		Valid:   true,
 	}
 }
 
 // Bytes returns a slice of cbor marshalled bytes
 func (t *Tx) Bytes() ([]byte, error) {
+	if err := t.CalculateAuxiliaryDataHash(); err != nil {
+		return nil, err
+	}
 	bytes, err := cbor.Marshal(t)
 	return bytes, err
 }
@@ -40,6 +46,9 @@ func (t *Tx) Hex() (string, error) {
 
 // Hash performs a blake2b hash of the transaction body and returns a slice of [32]byte
 func (t *Tx) Hash() ([32]byte, error) {
+	if err := t.CalculateAuxiliaryDataHash(); err != nil {
+		return [32]byte{}, err
+	}
 	txBody, err := cbor.Marshal(t.Body)
 	if err != nil {
 		var bt [32]byte
@@ -53,6 +62,9 @@ func (t *Tx) Hash() ([32]byte, error) {
 // Fee returns the fee(in lovelaces) required by the transaction from the linear formula
 // fee = txFeeFixed + txFeePerByte*tx_len_in_bytes
 func (t *Tx) Fee(lfee *fees.LinearFee) (uint, error) {
+	if err := t.CalculateAuxiliaryDataHash(); err != nil {
+		return 0, err
+	}
 	txCbor, err := cbor.Marshal(t)
 	if err != nil {
 		return 0, err
@@ -66,6 +78,18 @@ func (t *Tx) Fee(lfee *fees.LinearFee) (uint, error) {
 // SetFee sets the fee
 func (t *Tx) SetFee(fee uint) {
 	t.Body.Fee = uint64(fee)
+}
+
+func (t *Tx) CalculateAuxiliaryDataHash() error {
+	if t.Metadata != nil {
+		mdBytes, err := cbor.Marshal(&t.Metadata)
+		if err != nil {
+			return fmt.Errorf("cannot serialize metadata: %w", err)
+		}
+		auxHash := blake2b.Sum256(mdBytes)
+		t.Body.AuxiliaryDataHash = auxHash[:]
+	}
+	return nil
 }
 
 // AddInputs adds the inputs to the transaction body
