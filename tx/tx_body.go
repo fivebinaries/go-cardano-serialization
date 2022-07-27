@@ -8,10 +8,11 @@ import (
 
 // TxBody contains the inputs, outputs, fee and titme to live for the transaction.
 type TxBody struct {
-	Inputs  []*TxInput  `cbor:"0,keyasint"`
-	Outputs []*TxOutput `cbor:"1,keyasint"`
-	Fee     uint64      `cbor:"2,keyasint"`
-	TTL     uint32      `cbor:"3,keyasint,omitempty"`
+	Inputs            []*TxInput  `cbor:"0,keyasint"`
+	Outputs           []*TxOutput `cbor:"1,keyasint"`
+	Fee               uint64      `cbor:"2,keyasint"`
+	TTL               uint32      `cbor:"3,keyasint,omitempty"`
+	AuxiliaryDataHash []byte      `cbor:"7,keyasint,omitempty"`
 }
 
 // NewTxBody returns a pointer to a new transaction body.
