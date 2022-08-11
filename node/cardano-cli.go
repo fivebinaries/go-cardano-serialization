@@ -69,7 +69,7 @@ func (cli *cardanoCli) UTXOs(addr address.Address) (txIs []tx.TxInput, err error
 
 	for _, it := range ldata[2 : lenData-1] {
 		sec := strings.Fields(it)
-		txIx, err := strconv.Atoi(sec[1])
+		txIx, err := strconv.ParseUint(sec[1], 10, 16)
 		if err != nil {
 			return txIs, err
 		}
