@@ -76,7 +76,7 @@ func (cli *cardanoCli) UTXOs(addr address.Address) (txIs []tx.TxInput, err error
 
 		amSec := strings.Fields(sec[2])
 
-		amount, err := strconv.Atoi(amSec[0])
+		amount, err := strconv.ParseUint(amSec[0], 10, 16)
 		if err != nil {
 			return txIs, err
 		}
