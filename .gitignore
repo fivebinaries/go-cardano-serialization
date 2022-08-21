@@ -25,3 +25,4 @@
 *.cbor
 
 .test_mnm.txt
+.DS_Store
