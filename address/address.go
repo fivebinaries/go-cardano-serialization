@@ -1,6 +1,7 @@
 package address
 
 import (
+	"encoding/hex"
 	"errors"
 	"log"
 	"strings"
@@ -41,6 +42,19 @@ func NewAddress(raw string) (addr Address, err error) {
 		return
 	}
 
+	return NewAddressFromBytes(data)
+}
+
+func NewAddressFromHex(hexAddr string) (addr Address, err error) {
+	data, err := hex.DecodeString(hexAddr)
+	if err != nil {
+		return
+	}
+
+	return NewAddressFromBytes(data)
+}
+
+func NewAddressFromBytes(data []byte) (addr Address, err error) {
 	header := data[0]
 	netId := header & 0x0F
 
