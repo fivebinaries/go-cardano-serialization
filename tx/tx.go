@@ -105,3 +105,9 @@ func (t *Tx) AddOutputs(outputs ...*TxOutput) error {
 
 	return nil
 }
+
+func (t *Tx) AddCertificates(certs ...*Certificate) error {
+	t.Body.Certificates = append(t.Body.Certificates, certs...)
+
+	return nil
+}

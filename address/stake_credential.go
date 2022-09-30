@@ -8,6 +8,7 @@ const (
 )
 
 type StakeCredential struct {
+	_       struct{}            `cbor:",toarray"`
 	Kind    StakeCredentialType `cbor:"0,keyasint,omitempty"`
 	Payload []byte              `cbor:"1,keyasint,omitempty"`
 }
