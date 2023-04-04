@@ -31,6 +31,11 @@ func (b *BaseAddress) String() string {
 	return str
 }
 
+// DecodeAddress decodes a  bech32-encoded string to []byte
+func DecodeBech32Address(addr string) (string, []byte, error) {
+	return bech32.Decode(addr)
+}
+
 // NetworkInfo returns NetworkInfo{ProtocolMagigic and NetworkId}.
 func (b *BaseAddress) NetworkInfo() *network.NetworkInfo {
 	return &(b.Network)
